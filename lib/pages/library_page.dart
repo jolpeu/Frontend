@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grad_front/pages/reader_page.dart';
 
 class LibraryPage extends StatefulWidget{
   final List<Map<String, dynamic>> books;
@@ -22,7 +23,19 @@ class _LibraryPageState extends State<LibraryPage>{
 
 
   Widget _buildBookCard(Map<String, dynamic> book){
-    return Container(
+    return GestureDetector(
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ReaderPage(
+                  title: book['title'],
+                  content: book['text'] ??  '',
+              ),
+          ),
+        );
+      },
+      child: Container(
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -70,10 +83,11 @@ class _LibraryPageState extends State<LibraryPage>{
                 fontSize: 12,
                 color: Colors.green.shade700,
                 fontWeight: FontWeight.bold,
-            ),
+              ),
             textAlign: TextAlign.center,
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
