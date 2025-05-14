@@ -21,22 +21,32 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '졸업 프로젝트',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        fontFamily: 'Pretendard',
+        scaffoldBackgroundColor: Color(0xFFFEF9D9),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+            hintStyle: TextStyle(color: Colors.grey),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.grey[400],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            minimumSize: Size(double.infinity, 48),
+          ),
+        ),
+        textTheme: TextTheme(
+          bodyMedium: TextStyle(fontSize: 16),
+          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
       initialRoute: '/onboarding', // 앱 켜면 온보딩화면으로 뜸
       routes: {

@@ -36,44 +36,184 @@ class _LoginPageState extends State<LoginPage>{
   @override
   Widget build(BuildContext context){
     return Scaffold(
+      backgroundColor: Color(0xFFFEF9D9),
       appBar: AppBar(title: Text('로그인')),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _idController,
-              decoration: InputDecoration(labelText: '아이디'),
-            ),
-            TextField(
-              controller: _pwController,
-              decoration: InputDecoration(labelText: '비밀번호'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: _login, child: Text('로그인')),
-            TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/signup'),
-                child: Text('회원가입'),
-            ),
-            Divider(height: 40),
-            SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _naverLogin,
-              icon: Icon(Icons.account_circle),
-              label: Text('네이버로 로그인하기'),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _googleLogin,
-              icon: Icon(Icons.account_circle),
-              label: Text('구글로 로그인하기'),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black),
+      body: SafeArea(
+          child: Column(
+            children: [
+              Container(height: 60, color: Color(0xDDDEE5D4)),
+              Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 흰색 카드 영역
+                        Container(
+                          padding: EdgeInsets.all(24),
+                          margin: EdgeInsets.symmetric(horizontal: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              width: 1,
+                              color: Colors.grey,
+                            )
+                          ),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: _idController,
+                                decoration: InputDecoration(
+                                  hintText: '이메일',
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade100,
+                                      width: 2.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade100,
+                                      width: 2.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              TextField(
+                                controller: _pwController,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  hintText: '비밀번호',
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade100,
+                                      width: 2.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade100,
+                                      width: 2.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                              ElevatedButton(
+                                  onPressed: _login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[300],
+                                    foregroundColor: Colors.white,
+                                    minimumSize: Size(double.infinity, 48),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text('로그인'),
+                              ),
+                              SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(child:
+                                    TextButton(
+                                      onPressed: (){},
+                                      style: ButtonStyle(
+                                        backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                                        overlayColor: MaterialStateProperty.all(Colors.transparent),
+                                        padding: MaterialStateProperty.all(EdgeInsets.zero),
+                                        minimumSize: MaterialStateProperty.all(Size(0,0)),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: Text('이메일 찾기',
+                                      style: TextStyle(
+                                          color:Colors.black,
+                                          decoration: TextDecoration.underline),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 0),
+                                  Expanded(child:
+                                    TextButton(
+                                      onPressed: (){},
+                                      style: ButtonStyle(
+                                        backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                                        overlayColor: MaterialStateProperty.all(Colors.transparent),
+                                        padding: MaterialStateProperty.all(EdgeInsets.zero),
+                                        minimumSize: MaterialStateProperty.all(Size(0,0)),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: Text('비밀번호 찾기',
+                                        style: TextStyle(
+                                            color:Colors.black,
+                                            decoration: TextDecoration.underline),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 0),
+                                  Expanded(child:
+                                    TextButton(
+                                        style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                                          overlayColor: MaterialStateProperty.all(Colors.transparent),
+                                          padding: MaterialStateProperty.all(EdgeInsets.zero),
+                                          minimumSize: MaterialStateProperty.all(Size(0,0)),
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        onPressed:() =>
+                                          Navigator.pushNamed(context, '/signup'),
+                                        child: Text('회원가입',
+                                          style: TextStyle(
+                                              color:Colors.black,
+                                              decoration: TextDecoration.underline),),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 32),
+
+                        // 소셜 로그인 버튼
+                        SizedBox(
+                          width: 280,
+                          child: ElevatedButton.icon(
+                              onPressed: _naverLogin,
+                              //icon: Icon(Icons),
+                              label: Text('네이버로 시작하기'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size(double.infinity, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                              ),
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        SizedBox(
+                            width: 280,
+                            child: ElevatedButton.icon(
+                              onPressed: _googleLogin,
+                              //icon: Icon(Icons.g_mobiledata),
+                              label: Text('구글로 시작하기'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                side: BorderSide(color: Colors.grey.shade100),
+                                minimumSize: Size(double.infinity, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
