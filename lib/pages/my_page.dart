@@ -3,33 +3,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-
+/// 마이페이지 화면 - 프로필 이미지, 닉네임 수정, 로그아웃
 class MyPage extends StatefulWidget{
   @override
   _MyPageState createState() => _MyPageState();
 }
 
 class _MyPageState extends State<MyPage>{
-  bool _isEditing = false;
-  String _nickname = 'Nickname';
-  TextEditingController _controller = TextEditingController();
+  bool _isEditing = false;        // 수정 모드 여부
+  String _nickname = 'Nickname';  // 현재 닉네임
+  TextEditingController _controller = TextEditingController();  // 닉네임 수정용 컨트롤러
 
-  File? _profileImage;
+  File? _profileImage;    // 선택된 프로필 이미지 파일
 
   @override
   Widget build(BuildContext context){
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(top: 100),
+        padding: const EdgeInsets.only(top: 60),
         child: Column(
         children: [
+          Container(height: 60, color: Color(0xDDB3C39C)),
           SizedBox(height: 40),
 
-          // 프로필 사진
+          // 프로필 사진 영역
           GestureDetector(
-            onTap: _isEditing ? _pickProfileImage : null,
+            onTap: _isEditing ? _pickProfileImage : null,   // 수정 모드일 때만 이미지 변경 가능
             child: CircleAvatar(
-              radius: 60,
+              radius: 120,
               backgroundColor: Colors.grey[300],
               backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
               child: _profileImage == null
@@ -40,7 +41,7 @@ class _MyPageState extends State<MyPage>{
           SizedBox(height: 20),
 
 
-          // 닉네임
+          // 닉네임 수정/보기 상태
           _isEditing
           ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -82,7 +83,9 @@ class _MyPageState extends State<MyPage>{
           ),
           SizedBox(height: 6),
           Text("email@gmail.com", style: TextStyle(color: Colors.grey)),
+          SizedBox(height: 20),
 
+          // 완료 버튼(닉네임 수정 후 저장)
           if(_isEditing)
             TextButton(
                 onPressed: (){
@@ -93,13 +96,14 @@ class _MyPageState extends State<MyPage>{
                 },
                 child: Text('완료'),
             ),
+          // 로그아웃 버튼 - 수정 모드 아닐 때만 표시
           if(!_isEditing)
             TextButton(
                 onPressed: () async {
-                  // 로그아웃
+                  // SharedPreference를 통해 로그인 상태 초기화
                   SharedPreferences prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('isLoggedIn', false);
-                  Navigator.pushReplacementNamed(context, '/login');
+                  Navigator.pushReplacementNamed(context, '/login');  // 로그인 화면으로 이동
                 },
                 child: Text('로그아웃', style: TextStyle(color: Colors.red)),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grad_front/pages/reader_page.dart';
 
+/// 사용자가 업로드한 책들
 class LibraryPage extends StatefulWidget{
   final List<Map<String, dynamic>> books;
 
@@ -10,10 +11,11 @@ class LibraryPage extends StatefulWidget{
 }
 
 class _LibraryPageState extends State<LibraryPage>{
-  String _filter = '읽고 있는 책';
-  String _viewMode = 'grid';
+  String _filter = '읽고 있는 책';   // 현재 선택된 카테고리 필터 / 기본 - 읽고 있는 책
+  String _viewMode = 'grid';        // 보기 형식: grid or list
 
 
+  /// 필터에 맞는 책 목록 반환
   List<Map<String, dynamic>> get _filteredBooks {
     if (_filter == '전체') return widget.books;
     return widget.books.where((book) => book['status'] == _filter).toList();
@@ -21,10 +23,11 @@ class _LibraryPageState extends State<LibraryPage>{
 
   @override
 
-
+  /// 책 카드 UI 생성
   Widget _buildBookCard(Map<String, dynamic> book){
     return GestureDetector(
       onTap: (){
+        // 카드 클릭 시 ReaderPage로 이동
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -51,6 +54,7 @@ class _LibraryPageState extends State<LibraryPage>{
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 책 표지 아이콘 영역
           Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -63,12 +67,14 @@ class _LibraryPageState extends State<LibraryPage>{
               ),
           ),
           SizedBox(height: 8),
+          // 책 제목
           Text(
             book['title'],
             style: TextStyle(fontWeight: FontWeight.bold),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          // 진행률 바
           SizedBox(height: 4),
           LinearProgressIndicator(
             value: book['progress'],
@@ -76,6 +82,7 @@ class _LibraryPageState extends State<LibraryPage>{
             color: Colors.blueAccent,
             minHeight: 6,
           ),
+          // 진행률 퍼센트 텍스트
           SizedBox(height: 4),
           Text(
             '${(book['progress'] * 100).toInt()}%',
@@ -92,19 +99,22 @@ class _LibraryPageState extends State<LibraryPage>{
     );
   }
 
-
+  /// 전체 서재 화면 UI
   Widget build(BuildContext context){
     return Scaffold(
-      appBar: AppBar(title: Text('내 서재')),
+
       body: Column(
+
         children: [
+          Container(height: 60, color: Color(0xDDB3C39C)),
+
           // 상단 필터 + 보기 형식 아이콘
           Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // 상단 필터 탭
+                  // 상단 필터 탭 - 읽고 있는 책, 다 읽은 책, 전체
                   Row(
                     children: ['읽고 있는 책', '다 읽은 책', '전체'].map((label) {
                       return GestureDetector(
@@ -131,6 +141,7 @@ class _LibraryPageState extends State<LibraryPage>{
                       );
                     }).toList(),
                   ),
+                  // 보기 형식 아이콘 - grid / list
                   Row(
                     children: [
                       IconButton(
@@ -150,13 +161,15 @@ class _LibraryPageState extends State<LibraryPage>{
             ),
           Expanded(
             child: _filteredBooks.isEmpty
-          ?Center(
+            // 책 목록 영역
+            ?Center(
               child: Text(
                 '책이 없습니다. \n 홈 화면에서 파일을 업로드해보세요!',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             )
+            // grid 화면
             : _viewMode == 'grid'
                 ? GridView.builder(
               padding: EdgeInsets.all(8),
@@ -172,6 +185,7 @@ class _LibraryPageState extends State<LibraryPage>{
                 return _buildBookCard(book);
               },
             )
+            // list 화면
                 : ListView.builder(
               padding: EdgeInsets.all(8),
               itemCount: _filteredBooks.length,
