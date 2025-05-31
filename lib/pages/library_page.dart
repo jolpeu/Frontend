@@ -44,7 +44,7 @@ class _LibraryPageState extends State<LibraryPage>{
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
-              blurRadius: 6,
+              blurRadius: 4,
               offset: Offset(2, 2),
             ),
           ],
@@ -61,7 +61,8 @@ class _LibraryPageState extends State<LibraryPage>{
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
-                  child: Icon(Icons.menu_book, size: 40, color: Colors.white),
+                  child: Icon(Icons.menu_book, size: 36, color: Colors.white
+                  ),
                 ),
               ),
           ),
@@ -69,7 +70,7 @@ class _LibraryPageState extends State<LibraryPage>{
           // 책 제목
           Text(
             book['title'],
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -101,15 +102,24 @@ class _LibraryPageState extends State<LibraryPage>{
   /// 전체 서재 화면 UI
   Widget build(BuildContext context){
     return Scaffold(
-
+        backgroundColor: Color(0xFFFEF9D9),
       body: Column(
-
         children: [
-          Container(height: 60, color: Color(0xDDB3C39C)),
+          Container(
+              height: 70,
+              color: Color(0xDDB3C39C),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo_horizontal.png',
+                  height: 40,
+                ),
+              ),
+          ),
 
           // 상단 필터 + 보기 형식 아이콘
-          Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          Container(
+              color: Color(0xFFDEE5D4),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -120,7 +130,7 @@ class _LibraryPageState extends State<LibraryPage>{
                         onTap: () => setState(() => _filter = label),
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          margin: EdgeInsets.only(right: 10),
+                          margin: EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
@@ -133,7 +143,7 @@ class _LibraryPageState extends State<LibraryPage>{
                             label,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: _filter == label ? Colors.black : Colors.grey.shade700,
+                              color: _filter == label ? Colors.black : Colors.grey[600],
                             ),
                           ),
                         ),
@@ -157,7 +167,7 @@ class _LibraryPageState extends State<LibraryPage>{
                   ),
                 ],
               ),
-            ),
+          ),
           Expanded(
             child: _filteredBooks.isEmpty
             // 책 목록 영역
@@ -174,7 +184,7 @@ class _LibraryPageState extends State<LibraryPage>{
               padding: EdgeInsets.all(8),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 20,
+                crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 childAspectRatio: 0.6,
               ),
@@ -186,7 +196,7 @@ class _LibraryPageState extends State<LibraryPage>{
             )
             // list 화면
                 : ListView.builder(
-              padding: EdgeInsets.all(8),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               itemCount: _filteredBooks.length,
               itemBuilder: (context, index) {
                 final book = _filteredBooks[index];

@@ -167,7 +167,7 @@ void _googleLogin() async {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   // 이메일 찾기 버튼
-                                  Expanded(child:
+                                  /*Expanded(child:
                                     TextButton(
                                       onPressed: (){},
                                       style: ButtonStyle(
@@ -183,10 +183,10 @@ void _googleLogin() async {
                                           decoration: TextDecoration.underline),
                                       ),
                                     ),
-                                  ),
+                                  ),*/
                                   SizedBox(width: 0),
                                   // 비밀번호 찾기 버튼
-                                  Expanded(child:
+                                  /*Expanded(child:
                                     TextButton(
                                       onPressed: (){},
                                       style: ButtonStyle(
@@ -202,7 +202,7 @@ void _googleLogin() async {
                                             decoration: TextDecoration.underline),
                                       ),
                                     ),
-                                  ),
+                                  ),*/
                                   SizedBox(width: 0),
 
                                   // 회원가입 이동 버튼
