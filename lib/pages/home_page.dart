@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:grad_front/pages/library_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'my_page.dart';
 import 'dart:io';
 
+
 /// 홈페이지 전체 구조 정의
-class HomePage extends StatefulWidget{
+class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>{
-  int _currentIndex = 1; // 현재 선택한 하단바 인덱스 - 기본: 홈 화면
-
-  List<Map<String, dynamic>> _books = []; // 업로드한 책 파일 리스트
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 1;
+  List<Map<String, dynamic>> _books = [];
 
   @override
   Widget build(BuildContext context){

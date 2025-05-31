@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 /// 로그인 페이지
 class LoginPage extends StatefulWidget{
@@ -12,30 +16,56 @@ class _LoginPageState extends State<LoginPage>{
   final _pwController = TextEditingController();
 
   void _login() async {
+  final url = Uri.parse("http://localhost:8080/auth/login");
+
+  final response = await http.post(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'email': _idController.text.trim(),
+      'password': _pwController.text.trim(),
+    }),
+  );
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    final token = data['token'];
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedId = prefs.getString('userId');    // 아이디 입력 컨트롤러
-    String? savedPw = prefs.getString('userPw');    // 비밀번호 입력 컨트롤러
+    await prefs.setString('token', token);
+    await prefs.setBool('isLoggedIn', true);
 
-    /// 로컬에 저장된 ID/PW와 비교 후 로그인 처리
-    if(_idController.text == savedId && _pwController.text == savedPw){
-      await prefs.setBool('isLoggedIn', true);
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('아이디 또는 비밀번호가 틀렸습니다.')),
-      );
-    }
+    Navigator.pushReplacementNamed(context, '/home');
+  } else {
+    _showErrorSnackbar("로그인 실패: ${response.body}");
   }
+}
+
+void _showErrorSnackbar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
 
 
-  void _naverLogin(){
-    print('네이버 로그인 버튼 눌림');
+  void _naverLogin() async {
+  final url = Uri.parse("http://localhost:8080/oauth2/authorization/naver");
+
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    _showErrorSnackbar("네이버 로그인 페이지를 열 수 없습니다.");
   }
+}
 
-  void _googleLogin(){
-    print('구글 로그인 버튼 눌림');
+void _googleLogin() async {
+  final url = Uri.parse("http://localhost:8080/oauth2/authorization/google");
+
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    _showErrorSnackbar("구글 로그인 페이지를 열 수 없습니다.");
   }
-
+}
 
   @override
   Widget build(BuildContext context){

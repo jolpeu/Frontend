@@ -22,7 +22,6 @@ class _LibraryPageState extends State<LibraryPage>{
   }
 
   @override
-
   /// 책 카드 UI 생성
   Widget _buildBookCard(Map<String, dynamic> book){
     return GestureDetector(
