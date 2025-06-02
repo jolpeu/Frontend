@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// 회원가입 페이지
 class SignUpPage extends StatefulWidget{
@@ -38,15 +40,37 @@ class _SignUpPageState extends State<SignUpPage>{
       return;
     }
 
-    // SharedPreference를 이용해 사용자 정보 저장
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userId', _idController.text);
-    await prefs.setString('userPw', _pwController.text);
-    await prefs.setBool('isLoggedIn', true);
+    final url = Uri.parse('http://localhost:8080/auth/signup'); // Flutter Web에서는 localhost 사용 가능
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _idController.text.trim(),
+          'password': _pwController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ 회원가입 완료')),
+        );
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        _showError("회원가입 실패: ${response.body}");
+      }
+    } catch (e) {
+      _showError("서버 연결 실패: $e");
+    }
 
     // 홈 화면으로 이동
     Navigator.pushReplacementNamed(context, '/login');
   }
+
+  void _showError(String msg) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+}
 
   @override
   Widget build(BuildContext context){
