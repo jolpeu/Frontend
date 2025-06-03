@@ -3,9 +3,11 @@ import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:grad_front/pages/library_page.dart';
 import 'my_page.dart';
 import 'dart:io';
-
+import 'dart:async';
 
 /// 홈페이지 전체 구조 정의
+
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -65,12 +67,53 @@ class _HomePageState extends State<HomePage> {
 }
 
 /// 홈 화면 컨텐츠 - PDF 업로드 버튼
-class HomeMainContent extends StatelessWidget {
-  final Function(Map<String, dynamic>) onUpload;    // 업로드 콜백 함수
+class HomeMainContent extends StatefulWidget {
+  final Function(Map<String, dynamic>) onUpload; // 업로드 콜백 함수
 
   const HomeMainContent({required this.onUpload});
 
-  
+  @override
+  _HomeMainContentState createState() => _HomeMainContentState();
+}
+
+class _HomeMainContentState extends State<HomeMainContent>{
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _autoSlideTimer;
+
+  final List<String> _cards = [
+    'assets/images/1.png',
+    'assets/images/2.png',
+    'assets/images/3.png',
+  ];
+
+  @override
+  void initState(){
+    super.initState();
+    _startAutoSlide();
+  }
+
+  void _startAutoSlide(){
+    _autoSlideTimer = Timer.periodic(Duration(seconds: 2), (_){
+      if(_pageController.hasClients){
+        int nextPage = (_currentPage + 1) % _cards.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+        setState(() => _currentPage = nextPage);
+      }
+    });
+  }
+
+  @override
+  void dispose(){
+    _pageController.dispose();
+    _autoSlideTimer?.cancel();
+    super.dispose();
+  }
+
   /// PDF 파일 선택 및 업로드 처리
   Future<void> _pickPdf(BuildContext context) async {
     final params = OpenFileDialogParams(
@@ -80,7 +123,6 @@ class HomeMainContent extends StatelessWidget {
     );
 
     final filePath = await FlutterFileDialog.pickFile(params: params);
-
     if (filePath != null) {
       final file = File(filePath);
       final fileName = file.uri.pathSegments.last;
@@ -115,7 +157,7 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
 ''',
                     };
                     Navigator.of(context).pop();    // 팝업 닫기
-                    onUpload(newBook);              // 부모에 업로드 전달
+                    widget.onUpload(newBook);              // 부모에 업로드 전달
                   },
                   child: Text('확인'),
                 ),
@@ -127,11 +169,51 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ElevatedButton(
-          onPressed: () => _pickPdf(context),   // 버튼 클릭 시 파일 선택
-          child: Text('파일 업로드하기')
-      ),
+    // TODO: implement build
+    return Column(
+      children: [
+        Container(height: 60, color: Color(0xDDB3C39C),),
+        Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+                itemCount: _cards.length,
+                itemBuilder: (context, index){
+                return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      _cards[index],
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                );
+                },
+            ),
+        ),
+        Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: ElevatedButton(
+                onPressed: () => _pickPdf(context),
+                child: Text('파일 업로드'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF9CB7F2),
+                  foregroundColor: Colors.black,
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 4
+                ),
+            ),
+        ),
+      ],
     );
   }
 }
