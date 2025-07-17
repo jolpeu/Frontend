@@ -64,44 +64,78 @@ class _ReaderPageState extends State<ReaderPage>{
 
   @override
   Widget build(BuildContext context){
+    final progress = (_currentPage + 1) / _pages.length;
+
     return Scaffold(
       backgroundColor: Colors.yellow[50],
-      appBar: AppBar(
-        backgroundColor: Colors.yellow[50],
-        elevation: 0,
-        centerTitle: true,
-        title: Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Text(
-            _pages[_currentPage],
-            style: TextStyle(fontSize: 18, height: 1.6),
-          ),
-      ),
-      bottomNavigationBar: Container(
-        color: Colors.yellow[100],
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LinearProgressIndicator(value: (_currentPage + 1) / _pages.length),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+      body: Column(
+        children: [
+          // 상단 로고 + 책(파일) 제목
+          Container(
+            width: double.infinity,
+            color: Color(0xFFDBE3C3),
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Column(
               children: [
-                IconButton(onPressed: _goToNextPage, icon: Icon(Icons.skip_previous)),
-                IconButton(
-                    onPressed: _togglePlayPause,
-                    icon: Icon(_isPlaying ? Icons.pause_circle : Icons.play_circle),
-                    iconSize: 40,
-                ),
-                IconButton(onPressed: _goToNextPage, icon: Icon(Icons.skip_next)),
+                Image.asset('assets/logos/logo_horizontal.png', height: 30),
+                SizedBox(height: 8),
+                Text(widget.title,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               ],
-            )
-          ],
-        ),
-      ),
+            ),
+          ),
+
+          // 본문
+          Expanded(
+              child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white70,
+                      borderRadius: BorderRadius.circular(1.6),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        _pages[_currentPage],
+                        style: TextStyle(fontSize: 18, height: 1.6),
+                      ),
+                    ),
+                  ),
+              ),
+          ),
+
+          // 하단바
+          Container(
+            color: Colors.yellow[100],
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: progress),
+                SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('${(progress * 100).toStringAsFixed(0)}%', style: TextStyle(color: Colors.grey[600])),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    IconButton(onPressed: _goToPreviousPage, icon: Image.asset('assets/icons/icon_previous.png')),
+                    IconButton(onPressed: _togglePlayPause,
+                        icon: Icon(_isPlaying ? Icons.pause_circle : Icons.play_circle),
+                        iconSize: 40,
+                    ),
+                    IconButton(onPressed: _goToNextPage, icon: Image.asset('assets/icons/icon_next.png')),
+                  ],
+                )
+              ],
+            ),
+          )
+
+        ],
+      )
     );
   }
 }

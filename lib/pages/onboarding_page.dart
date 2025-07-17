@@ -61,7 +61,7 @@ class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProvid
            child: Hero(
              tag: 'appLogo',
            child: Image.asset(
-              'assets/images/logo.png',
+              'assets/logos/logo.png',
               width: 300,
               height: 300,
            ),

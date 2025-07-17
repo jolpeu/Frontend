@@ -83,11 +83,11 @@ class _SignUpPageState extends State<SignUpPage>{
           // 세로 가운데 정렬
           children: [
             SizedBox(height: 32),
-            // 상단 헤더 영억 - 로고 들어갈 예정
+            // 상단 헤더 영억
             Hero(
               tag: 'appLogo',
               child: Image.asset(
-                'assets/images/logo.png',
+                'assets/logos/logo.png',
                 width: 200, // 줄어든 크기
                 height: 200,
               ),

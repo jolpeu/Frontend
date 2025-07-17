@@ -4,6 +4,7 @@ import 'package:grad_front/pages/library_page.dart';
 import 'my_page.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 
 /// 홈페이지 전체 구조 정의
 
@@ -15,7 +16,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
-  List<Map<String, dynamic>> _books = [];
+  List<Map<String, dynamic>> _books = [  {
+    'title': '돈B어프레이드',
+    'status': '읽고 있는 책',
+    'progress': 0.36,
+    'text': '''
+“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
+
+지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
+“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
+
+평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
+
+Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 채점 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하게 된 참이었다.
+''',
+  }];
 
   @override
   Widget build(BuildContext context){
@@ -47,19 +62,111 @@ class _HomePageState extends State<HomePage> {
             _currentIndex = index;  //  하단바 전환
           });
         },
-        items: const [
+        selectedItemColor: Color(0xFFB3C39C),
+        unselectedItemColor: Color(0xFF676767),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book),
+            icon: Image.asset('assets/icons/icon_book-inactive.png', height: 24,),
+            activeIcon: Image.asset('assets/icons/icon_book-active.png', height: 24,),
             label: '서재',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Image.asset('assets/icons/icon_home-inactive.png', height: 24,),
+            activeIcon: Image.asset('assets/icons/icon_home-active.png', height: 24,),
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Image.asset('assets/icons/icon_user-inactive.png', height: 24,),
+            activeIcon: Image.asset('assets/icons/icon_user-active.png', height: 24,),
             label: '마이페이지',
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class LoadingAnimation extends StatefulWidget{
+  @override
+  _LoadingAnimationState createState() => _LoadingAnimationState();
+}
+
+class _LoadingAnimationState extends State<LoadingAnimation> with TickerProviderStateMixin{
+  late List<AnimationController> _controllers;
+  late List<Animation<double>> _animations;
+
+  void initState() {
+    super.initState();
+
+    _controllers = List.generate(4, (index) =>
+        AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: 500),
+        )
+    );
+
+    _animations = _controllers.map((c) =>
+        CurvedAnimation(
+          parent: c,
+          curve: Curves.easeInOut,
+        )).toList();
+
+    _playForward();
+  }
+
+  void _playForward() async{
+    for (int i = 0; i < 4; i++){
+      await Future.delayed(Duration(milliseconds: 300));
+      _controllers[i].forward();
+    }
+    await Future.delayed(Duration(milliseconds: 400));
+    _playReverse();
+  }
+
+  void _playReverse() async{
+    for (int i = 3; i >= 0; i--){
+      await Future.delayed(Duration(milliseconds: 300));
+      _controllers[i].reverse();
+    }
+    await Future.delayed(Duration(milliseconds: 400));
+    _playForward();
+  }
+
+  @override
+  void dispose(){
+    for (var c in _controllers){
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Widget _buildLogo(Animation<double> ani,  double angle, Offset off){
+    return Center(
+      child: FadeTransition(
+          opacity: ani,
+          child: ScaleTransition(
+          scale: ani,
+          child: Transform.translate(
+              offset: off,
+          child: Transform.rotate(
+              angle: angle,
+            child: Image.asset('assets/icons/icon_leaf.png', width: 40,),
+          ),),
+          ),
+      ),
+    );
+  }
+
+  Widget build(BuildContext context){
+    return SizedBox(
+      width: 120,
+      height: 120,
+      child: Stack(
+        children: [
+          _buildLogo(_animations[0], 0 * 3.14 / 2, Offset(0, -24)),
+          _buildLogo(_animations[1], 1 * 3.14 / 2, Offset(24, 0)),
+          _buildLogo(_animations[2], 2 * 3.14 / 2, Offset(0, 24)),
+          _buildLogo(_animations[3], 3 * 3.14 / 2, Offset(-24, 0)),
         ],
       ),
     );
@@ -94,7 +201,7 @@ class _HomeMainContentState extends State<HomeMainContent>{
   }
 
   void _startAutoSlide(){
-    _autoSlideTimer = Timer.periodic(Duration(seconds: 2), (_){
+    _autoSlideTimer = Timer.periodic(Duration(seconds: 3), (_){
       if(_pageController.hasClients){
         int nextPage = (_currentPage + 1) % _cards.length;
         _pageController.animateToPage(
@@ -116,16 +223,28 @@ class _HomeMainContentState extends State<HomeMainContent>{
 
   /// PDF 파일 선택 및 업로드 처리
   Future<void> _pickPdf(BuildContext context) async {
-    final params = OpenFileDialogParams(
+    /*final params = OpenFileDialogParams(
       dialogType: OpenFileDialogType.document,
       sourceType: SourceType.photoLibrary,
       fileExtensionsFilter: ['pdf'],    // PDF만 허용  
     );
 
-    final filePath = await FlutterFileDialog.pickFile(params: params);
-    if (filePath != null) {
+    final filePath = await FlutterFileDialog.pickFile(params: params);*/
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if(result != null){
+      //final filePath = result.files.single.path!;
+      final fileName = result.files.single.name;
+
+      print("파일 업로드 성공: $fileName");
+
+   /* if (filePath != null) {
       final file = File(filePath);
-      final fileName = file.uri.pathSegments.last;
+      final fileName = file.uri.pathSegments.last;*/
 
       // 업로드 확인 팝업
       showDialog(
@@ -135,11 +254,20 @@ class _HomeMainContentState extends State<HomeMainContent>{
               title: Text('$fileName 파일을 업로드하시겠습니까?'),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(), // 팝업 닫고 다시 선택
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _pickPdf(context);
+                  }, // 팝업 닫고 다시 선택
                   child: Text('다시 선택'),
                 ),
                 TextButton(
-                  onPressed: () {
+                  onPressed: ()  async {
+
+                    Navigator.of(context).pop();
+                    showLoadingDialog(context);
+                    await Future.delayed(Duration(seconds: 3));
+                    Navigator.pop(context);
+
                     final newBook = {
                       'title': fileName.replaceAll('.pdf', ' '),
                       'status': '읽고 있는 책',
@@ -172,7 +300,13 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
     // TODO: implement build
     return Column(
       children: [
-        Container(height: 60, color: Color(0xDDB3C39C),),
+        Container(
+          height: 70,
+          color: Color(0xDDB2C29B),
+          child: Center(
+            child: Image.asset('assets/logos/logo_horizontal.png',
+            height: 40)
+          )),
         Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -215,5 +349,31 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
         ),
       ],
     );
+  }
+
+  void showLoadingDialog(BuildContext context){
+    showDialog(
+        context: context,
+        barrierDismissible: false, // 바깥 탭으로 안 닫히도록
+        barrierColor: Colors.black.withOpacity(0.8),
+        builder: (context){
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LoadingAnimation(),
+                const SizedBox(height: 34,),
+                const Text(
+                  '파일을 업로드하는 중입니다...',
+                  style: TextStyle(
+                      color: Color(0xDDB2C29B),
+                      fontSize: 30,
+                    ),
+                )
+              ],
+            ),
+          );
+        },
+        );
   }
 }

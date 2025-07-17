@@ -54,7 +54,7 @@ class _MyPageState extends State<MyPage> {
             color: Color(0xDDB2C29B),
             child: Center(
               child: Image.asset(
-                'assets/images/logo_horizontal.png',
+                'assets/logos/logo_horizontal.png',
                 height: 40,
               ),
             ),

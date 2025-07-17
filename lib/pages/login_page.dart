@@ -79,7 +79,7 @@ void _googleLogin() async {
               Hero(
                 tag: 'appLogo',
                 child: Image.asset(
-                  'assets/images/logo.png',
+                  'assets/logos/logo.png',
                   width: 200, // 줄어든 크기
                   height: 200,
                 ),

@@ -110,7 +110,7 @@ class _LibraryPageState extends State<LibraryPage>{
               color: Color(0xDDB3C39C),
               child: Center(
                 child: Image.asset(
-                  'assets/images/logo_horizontal.png',
+                  'assets/logos/logo_horizontal.png',
                   height: 40,
                 ),
               ),
@@ -154,13 +154,21 @@ class _LibraryPageState extends State<LibraryPage>{
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.grid_view),
-                        color: _viewMode == 'grid' ? Colors.black : Colors.grey,
+                        icon: Image.asset(
+                          _viewMode == 'grid'
+                              ? 'assets/icons/icon_grid-active.png'
+                              : 'assets/icons/icon_grid-inactive.png',
+                          height: 27,
+                        ),
                         onPressed: () => setState(() => _viewMode = 'grid'),
                           ),
                       IconButton(
-                        icon: Icon(Icons.view_list),
-                        color: _viewMode == 'list' ? Colors.black : Colors.grey,
+                        icon: Image.asset(
+                          _viewMode == 'list'
+                              ? 'assets/icons/icon_list-active.png'
+                              : 'assets/icons/icon_list-inactive.png',
+                          height: 24,
+                        ),
                         onPressed: () => setState(() => _viewMode = 'list'),
                       ),
                     ],
@@ -200,9 +208,22 @@ class _LibraryPageState extends State<LibraryPage>{
               itemCount: _filteredBooks.length,
               itemBuilder: (context, index) {
                 final book = _filteredBooks[index];
-                return ListTile(
-                  title: Text(book['title']),
-                  subtitle: Text(book['status']),
+                return GestureDetector(
+                  onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ReaderPage(
+                              title: book['title'],
+                              content: book['text'] ?? '',
+                          ),
+                      ),
+                    );
+                  },
+                  child: ListTile(
+                    title: Text(book['title']),
+                    subtitle: Text(book['status']),
+                  ),
                 );
               },
             ),
