@@ -315,6 +315,7 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
                 return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: Container(
+                  height: 100,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
@@ -335,13 +336,13 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
             padding: const EdgeInsets.only(bottom: 32),
             child: ElevatedButton(
                 onPressed: () => _pickPdf(context),
-                child: Text('파일 업로드'),
+                child: Text('파일 업로드', style: TextStyle(fontSize: 40),),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF9CB7F2),
-                  foregroundColor: Colors.black,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black54,
+                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(50),
                   ),
                   elevation: 4
                 ),

@@ -74,7 +74,7 @@ void _googleLogin() async {
       body: SafeArea(
           child: Column(
             children: [
-              SizedBox(height: 32),
+              SizedBox(height: 100),
               // 상단 헤더 영억 - 로고 들어갈 예정
               Hero(
                 tag: 'appLogo',

@@ -70,21 +70,28 @@ class _ReaderPageState extends State<ReaderPage>{
       backgroundColor: Colors.yellow[50],
       body: Column(
         children: [
-          // 상단 로고 + 책(파일) 제목
+          // 상단 로고
           Container(
-            width: double.infinity,
-            color: Color(0xFFDBE3C3),
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              children: [
-                Image.asset('assets/logos/logo_horizontal.png', height: 30),
-                SizedBox(height: 8),
-                Text(widget.title,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              ],
+            height: 70,
+            color: Color(0xDDB3C39C),
+            child: Center(
+              child: Image.asset(
+                'assets/logos/logo_horizontal.png',
+                height: 40,
+              ),
             ),
           ),
 
+          Container(
+            color: Color(0xFFDEE5D4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold),),
+              ],
+            ),
+          ),
           // 본문
           Expanded(
               child: Padding(
@@ -122,12 +129,13 @@ class _ReaderPageState extends State<ReaderPage>{
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    IconButton(onPressed: _goToPreviousPage, icon: Image.asset('assets/icons/icon_previous.png')),
+                    IconButton(onPressed: _goToPreviousPage, icon: Image.asset('assets/icons/icon_previous.png', height: 40,)),
                     IconButton(onPressed: _togglePlayPause,
-                        icon: Icon(_isPlaying ? Icons.pause_circle : Icons.play_circle),
-                        iconSize: 40,
+                        icon: Image.asset(_isPlaying ? 'assets/icons/icon_play.png' : 'assets/icons/icon_pause.png',
+                        height: 50,),
+
                     ),
-                    IconButton(onPressed: _goToNextPage, icon: Image.asset('assets/icons/icon_next.png')),
+                    IconButton(onPressed: _goToNextPage, icon: Image.asset('assets/icons/icon_next.png', height: 40,)),
                   ],
                 )
               ],

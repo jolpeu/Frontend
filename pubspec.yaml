@@ -92,6 +92,10 @@ flutter:
     - assets/icons/loading_icon.png
     - assets/icons/loading_icon.gif
     - assets/icons/icon_leaf.png
+    - assets/icons/icon_previous.png
+    - assets/icons/icon_next.png
+    - assets/icons/icon_play.png
+    - assets/icons/icon_pause.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
