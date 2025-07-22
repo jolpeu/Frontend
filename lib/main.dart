@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       title: '졸업 프로젝트',
       theme: ThemeData(
         fontFamily: 'Pretendard',
-        scaffoldBackgroundColor: const Color(0xFFFEF9D9),
+        scaffoldBackgroundColor: const Color(0xFFFFFFFF),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,

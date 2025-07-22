@@ -54,7 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFEF9D9),
+      backgroundColor: Colors.white70,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 /// 이북 리더 화면: 텍스트 보기, 페이지 넘기기, TTS 제어 UI 포함
 class ReaderPage extends StatefulWidget{
@@ -15,6 +16,8 @@ class _ReaderPageState extends State<ReaderPage>{
   int _currentPage = 0;         // 현재 페이지 인덱스
   late List<String> _pages;     // 나뉘어진 페이지 목록
   bool _isPlaying = false;      // TTS 재생 상태
+  bool _showUI = true;
+  Timer? _hideTimer;
   double _progress = 0.0;       // 진행률 (아직 사용 안함)
 
   @override
@@ -23,7 +26,30 @@ class _ReaderPageState extends State<ReaderPage>{
     super.initState();
     // 텍스트를 여러 페이지로 분할
     _pages = _splitIntoPages(widget.content);
+    _startHideTimer();
   }
+
+  void _startHideTimer(){
+    _hideTimer?.cancel();
+    _hideTimer = Timer(Duration(seconds: 3), (){
+      setState(() {
+        _showUI = false;
+      });
+    });
+  }
+
+  void _toggleUIVisibility(){
+    setState(() => _showUI = !_showUI);
+    if(_showUI) _startHideTimer();
+  }
+
+  void _onUserInteraction(){
+    if(!_showUI){
+      setState(() => _showUI = true);
+    }
+    _startHideTimer();
+  }
+
 
   /// 긴 텍스트를 페이지 단위로 분리
   List<String> _splitIntoPages(String text) {
@@ -66,8 +92,56 @@ class _ReaderPageState extends State<ReaderPage>{
   Widget build(BuildContext context){
     final progress = (_currentPage + 1) / _pages.length;
 
+    return GestureDetector(
+      onTap: _toggleUIVisibility,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Column(
+          children: [
+            // 상단 로고
+            AnimatedOpacity(
+                opacity: _showUI ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 300),
+            child: _buildTopBar(),
+            ),
+
+            // 본문
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white70,
+                      borderRadius: BorderRadius.circular(1.6),
+                    ),
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (scroll){
+                        _onUserInteraction();
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        child: Text(
+                          _pages[_currentPage],
+                          style: TextStyle(fontSize: 18, height: 1.6),
+                        ),
+                      ),
+                    ),
+                ),
+              ),
+            ),
+            AnimatedOpacity(
+                opacity: _showUI ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 300),
+              child: _buildBottomBar(progress),
+            )
+          ],
+        ),
+      ),
+    );
+    /*
     return Scaffold(
-      backgroundColor: Colors.yellow[50],
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           // 상단 로고
@@ -88,7 +162,7 @@ class _ReaderPageState extends State<ReaderPage>{
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold),),
+                Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
               ],
             ),
           ),
@@ -102,19 +176,26 @@ class _ReaderPageState extends State<ReaderPage>{
                       color: Colors.white70,
                       borderRadius: BorderRadius.circular(1.6),
                     ),
-                    child: SingleChildScrollView(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (scroll){
+                        _onUserInteraction();
+                        return false;
+                      },
+child: SingleChildScrollView(
                       child: Text(
                         _pages[_currentPage],
                         style: TextStyle(fontSize: 18, height: 1.6),
                       ),
                     ),
+                    )
+
                   ),
               ),
           ),
 
           // 하단바
           Container(
-            color: Colors.yellow[100],
+            color: Colors.white54,
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -123,7 +204,8 @@ class _ReaderPageState extends State<ReaderPage>{
                 SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Text('${(progress * 100).toStringAsFixed(0)}%', style: TextStyle(color: Colors.grey[600])),
+                  child: Text('${(progress * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(color: Colors.grey[600])),
                 ),
                 SizedBox(height: 10),
                 Row(
@@ -133,7 +215,6 @@ class _ReaderPageState extends State<ReaderPage>{
                     IconButton(onPressed: _togglePlayPause,
                         icon: Image.asset(_isPlaying ? 'assets/icons/icon_play.png' : 'assets/icons/icon_pause.png',
                         height: 50,),
-
                     ),
                     IconButton(onPressed: _goToNextPage, icon: Image.asset('assets/icons/icon_next.png', height: 40,)),
                   ],
@@ -144,6 +225,65 @@ class _ReaderPageState extends State<ReaderPage>{
 
         ],
       )
+    );*/
+  }
+  Widget _buildTopBar(){
+      return Column(
+        children: [
+        // 상단 로고
+          Container(
+            height: 70,
+            color: Color(0xDDB3C39C),
+            child: Center(
+              child: Image.asset(
+                'assets/logos/logo_horizontal.png',
+                height: 40,
+              ),
+            ),
+          ),
+
+          Container(
+            color: Color(0xFFDEE5D4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              ],
+            ),
+          ),
+        ],
+      );
+  }
+
+  Widget _buildBottomBar(double progress){
+    return Container(
+      color: Colors.white54,
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(value: progress),
+          SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text('${(progress * 100).toStringAsFixed(0)}%',
+                style: TextStyle(color: Colors.grey[600])),
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(onPressed: _goToPreviousPage, icon: Image.asset('assets/icons/icon_previous.png', height: 40,)),
+              IconButton(onPressed: _togglePlayPause,
+                icon: Image.asset(_isPlaying ? 'assets/icons/icon_play.png' : 'assets/icons/icon_pause.png',
+                  height: 50,),
+              ),
+              IconButton(onPressed: _goToNextPage, icon: Image.asset('assets/icons/icon_next.png', height: 40,)),
+            ],
+          )
+        ],
+      ),
     );
   }
 }

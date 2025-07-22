@@ -102,7 +102,7 @@ class _LibraryPageState extends State<LibraryPage>{
   /// 전체 서재 화면 UI
   Widget build(BuildContext context){
     return Scaffold(
-        backgroundColor: Color(0xFFFEF9D9),
+        backgroundColor: Colors.white70,
       body: Column(
         children: [
           Container(

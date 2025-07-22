@@ -46,7 +46,7 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF9D9),
+      backgroundColor: Colors.white70,
       body: Column(
         children: [
           Container(
@@ -65,14 +65,25 @@ class _MyPageState extends State<MyPage> {
           Stack(
             alignment: Alignment.center,
             children: [
-              CircleAvatar(
-                radius: 100,
-                backgroundColor: _isEditing ? Colors.grey[700] : Colors.white,
-                backgroundImage: _profileImage != null ? FileImage(
-                    _profileImage!) : null,
-                child: _profileImage == null
-                    ? Icon(Icons.person, size: 60, color: Colors.grey[500])
-                    : null,
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    width: 1,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 100,
+                  backgroundColor: _isEditing ? Colors.grey[700] : Colors.white54,
+                  backgroundImage: _profileImage != null ? FileImage(
+                      _profileImage!) : null,
+                  child: _profileImage == null
+                      ? Icon(Icons.person, size: 60, color: Colors.grey[500])
+                      : null,
+                ),
               ),
               if(_isEditing)
                 GestureDetector(

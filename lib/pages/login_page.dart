@@ -70,7 +70,7 @@ void _googleLogin() async {
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      backgroundColor: Color(0xFFFEF9D9),
+      backgroundColor: Colors.white70,
       body: SafeArea(
           child: Column(
             children: [
@@ -101,7 +101,7 @@ void _googleLogin() async {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               width: 1,
-                              color: Colors.grey,
+                              color: Colors.black12,
                             )
                           ),
                           child: Column(

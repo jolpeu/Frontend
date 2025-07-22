@@ -319,6 +319,11 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 5,
+                      offset: Offset(2, 4)
+                    )]
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
@@ -344,7 +349,7 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50),
                   ),
-                  elevation: 4
+                  elevation: 6
                 ),
             ),
         ),

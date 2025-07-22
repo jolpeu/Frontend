@@ -75,7 +75,7 @@ class _SignUpPageState extends State<SignUpPage>{
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      backgroundColor: const Color(0xFFFEF9D9),
+      backgroundColor: Colors.white70,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -103,7 +103,7 @@ class _SignUpPageState extends State<SignUpPage>{
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     width: 1,
-                    color: Colors.grey,
+                    color: Colors.black12,
                   ),
                 ),
                 child: Column(
