@@ -32,7 +32,7 @@ class _LibraryPageState extends State<LibraryPage>{
           MaterialPageRoute(
               builder: (context) => ReaderPage(
                   title: book['title'],
-                  content: book['text'] ??  '',
+                  content: book['text'],
               ),
           ),
         );
