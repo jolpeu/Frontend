@@ -10,12 +10,11 @@ class MyPage extends StatefulWidget{
 }
 
 class _MyPageState extends State<MyPage> {
-  bool _isEditing = false; // 수정 모드 여부
-  String _nickname = 'Nickname'; // 현재 닉네임
-  String _email = 'email@example.com'; // 실제 저장된 이메일 불러올 변수
-  TextEditingController _controller = TextEditingController(); // 닉네임 수정용 컨트롤러
-
-  File? _profileImage; // 선택된 프로필 이미지 파일
+  bool _isEditing = false;
+  String _nickname = 'Nickname';
+  String _email    = 'email@example.com';
+  TextEditingController _controller = TextEditingController();
+  File? _profileImage;
 
   @override
   void initState() {
@@ -24,10 +23,17 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future<void> _loadUserInfo() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('email') ?? '';
     setState(() {
-      _nickname = prefs.getString('userId') ?? 'Nickname';
-      _email = prefs.getString('userId') ?? 'email@example.com';
+      _email = savedEmail;
+      // 이메일 기준으로 키 생성
+      final nickKey = 'nickname\_${_email}';
+      final savedNick = prefs.getString(nickKey);
+      _nickname = savedNick
+        ?? (savedEmail.contains('@')
+            ? savedEmail.split('@')[0]
+            : 'Nickname');
     });
   }
 
@@ -165,9 +171,13 @@ class _MyPageState extends State<MyPage> {
           // 완료 버튼(닉네임 수정 후 저장)
           _isEditing
               ? TextButton(
-            onPressed: () {
+            onPressed: () async {
+              final newNick = _controller.text.trim();
+              final prefs = await SharedPreferences.getInstance();
+              final nickKey = 'nickname\_${_email}';
+              await prefs.setString(nickKey, newNick);
               setState(() {
-                _nickname = _controller.text;
+                _nickname = newNick;
                 _isEditing = false;
               });
             },

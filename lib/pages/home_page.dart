@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
-import 'package:grad_front/pages/library_page.dart';
-import 'my_page.dart';
-import 'dart:io';
-import 'dart:async';
 import 'package:file_picker/file_picker.dart';
-
-/// 홈페이지 전체 구조 정의
-
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:typed_data';
+import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:grad_front/pages/library_page.dart';
+import 'package:grad_front/pages/my_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -16,84 +17,89 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
-  List<Map<String, dynamic>> _books = [  {
-    'title': '돈B어프레이드',
-    'status': '읽고 있는 책',
-    'progress': 0.36,
-    'text': '''
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-''',
-  }];
+  List<Map<String, dynamic>> _books = [];
 
   @override
-  Widget build(BuildContext context){
-    
-    // 화면 전환용 페이지 리스트 - 홈, 서재, 마이페이지
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+    print('■ Home initState prefs 토큰: ${prefs.getString('token')}');
+  });
+    _fetchMyBooks();
+  }
+
+  Future<void> _fetchMyBooks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final uri = Uri.parse('http://localhost:8080/api/files/list');
+    final resp = await http.get(
+      uri,
+      headers: token != null ? {'Authorization': 'Bearer $token'} : {},
+    );
+
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      final utf8Body = utf8.decode(resp.bodyBytes);
+      final List<dynamic> data = jsonDecode(utf8Body);
+      final books = data.map((m) {
+        final sentences = List<String>.from(m['sentences'] ?? []);
+        return {
+          'title': m['filename'].toString().replaceAll('.pdf', ''),
+          'status': '읽고 있는 책',
+          'progress': 0.0,
+          'preview': sentences.isNotEmpty ? sentences.first : '',
+          'sentences': sentences,
+        };
+      }).toList();
+
+      setState(() {
+        _books = books;
+      });
+    } else {
+      print('내 서재 불러오기 실패: ${resp.statusCode} ${resp.body}');
+    }
+  }
+
+  void _handleNewBook(Map<String, dynamic> book) {
+    setState(() {
+      _books.add(book);
+      _currentIndex = 0;
+    });
+    // 업로드 직후 서버에 저장된 전체 리스트 다시 불러오기
+    _fetchMyBooks();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final List<Widget> _pages = [
-      LibraryPage(books: _books), // 서재
-      HomeMainContent(
-        onUpload: (newBook){
-          setState(() {
-            _books.add(newBook);  // 새 책 추가
-            _currentIndex = 0;    // 책 추가하면 서재 페이지로 전환
-          });
-        }
-      ),
-      MyPage(),   // 마이페이지
+      LibraryPage(books: _books),
+      HomeMainContent(onUpload: _handleNewBook),
+      MyPage(),
     ];
 
     return Scaffold(
-      body:
-      IndexedStack(
+      body: IndexedStack(
         index: _currentIndex,
-        children: _pages,   // _currentIndex에 맞는 페이지 보여줌
+        children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index){
-          setState(() {
-            _currentIndex = index;  //  하단바 전환
-          });
-        },
+        onTap: (idx) => setState(() => _currentIndex = idx),
         selectedItemColor: Color(0xFFB3C39C),
         unselectedItemColor: Color(0xFF676767),
-        items: [
+        items: const [
           BottomNavigationBarItem(
-            icon: Image.asset('assets/icons/icon_book-inactive.png', height: 24,),
-            activeIcon: Image.asset('assets/icons/icon_book-active.png', height: 24,),
+            icon: Icon(Icons.book_outlined),
+            activeIcon: Icon(Icons.book),
             label: '서재',
           ),
           BottomNavigationBarItem(
-            icon: Image.asset('assets/icons/icon_home-inactive.png', height: 24,),
-            activeIcon: Image.asset('assets/icons/icon_home-active.png', height: 24,),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Image.asset('assets/icons/icon_user-inactive.png', height: 24,),
-            activeIcon: Image.asset('assets/icons/icon_user-active.png', height: 24,),
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: '마이페이지',
           ),
         ],
@@ -102,107 +108,106 @@ Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 
   }
 }
 
-class LoadingAnimation extends StatefulWidget{
+class LoadingAnimation extends StatefulWidget {
   @override
   _LoadingAnimationState createState() => _LoadingAnimationState();
 }
 
-class _LoadingAnimationState extends State<LoadingAnimation> with TickerProviderStateMixin{
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
+class _LoadingAnimationState extends State<LoadingAnimation>
+    with TickerProviderStateMixin {
+  late final List<AnimationController> _controllers;
+  late final List<Animation<double>> _animations;
 
+  @override
   void initState() {
     super.initState();
-
-    _controllers = List.generate(4, (index) =>
-        AnimationController(
-          vsync: this,
-          duration: Duration(milliseconds: 500),
-        )
+    _controllers = List.generate(
+      4,
+      (_) => AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 500),
+      ),
     );
-
-    _animations = _controllers.map((c) =>
-        CurvedAnimation(
-          parent: c,
-          curve: Curves.easeInOut,
-        )).toList();
-
+    _animations = _controllers
+        .map((c) => CurvedAnimation(parent: c, curve: Curves.easeInOut))
+        .toList();
     _playForward();
   }
 
-  void _playForward() async{
-    for (int i = 0; i < 4; i++){
+  Future<void> _playForward() async {
+    for (var c in _controllers) {
       await Future.delayed(Duration(milliseconds: 300));
-      _controllers[i].forward();
+      c.forward();
     }
     await Future.delayed(Duration(milliseconds: 400));
     _playReverse();
   }
 
-  void _playReverse() async{
-    for (int i = 3; i >= 0; i--){
+  Future<void> _playReverse() async {
+    for (var c in _controllers.reversed) {
       await Future.delayed(Duration(milliseconds: 300));
-      _controllers[i].reverse();
+      c.reverse();
     }
     await Future.delayed(Duration(milliseconds: 400));
     _playForward();
   }
 
   @override
-  void dispose(){
-    for (var c in _controllers){
-      c.dispose();
-    }
+  void dispose() {
+    for (var c in _controllers) c.dispose();
     super.dispose();
   }
 
-  Widget _buildLogo(Animation<double> ani,  double angle, Offset off){
+  Widget _buildLogo(Animation<double> ani, double angle, Offset off) {
     return Center(
       child: FadeTransition(
-          opacity: ani,
-          child: ScaleTransition(
+        opacity: ani,
+        child: ScaleTransition(
           scale: ani,
           child: Transform.translate(
-              offset: off,
-          child: Transform.rotate(
+            offset: off,
+            child: Transform.rotate(
               angle: angle,
-            child: Image.asset('assets/icons/icon_leaf.png', width: 40,),
-          ),),
+              child: Image.asset('assets/icons/icon_leaf.png', width: 40),
+            ),
           ),
+        ),
       ),
     );
   }
 
-  Widget build(BuildContext context){
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       width: 120,
       height: 120,
       child: Stack(
         children: [
-          _buildLogo(_animations[0], 0 * 3.14 / 2, Offset(0, -24)),
-          _buildLogo(_animations[1], 1 * 3.14 / 2, Offset(24, 0)),
-          _buildLogo(_animations[2], 2 * 3.14 / 2, Offset(0, 24)),
-          _buildLogo(_animations[3], 3 * 3.14 / 2, Offset(-24, 0)),
+          _buildLogo(_animations[0], 0, Offset(0, -24)),
+          _buildLogo(_animations[1], 1.5708, Offset(24, 0)),
+          _buildLogo(_animations[2], 3.1416, Offset(0, 24)),
+          _buildLogo(_animations[3], 4.7124, Offset(-24, 0)),
         ],
       ),
     );
   }
 }
 
-/// 홈 화면 컨텐츠 - PDF 업로드 버튼
 class HomeMainContent extends StatefulWidget {
-  final Function(Map<String, dynamic>) onUpload; // 업로드 콜백 함수
-
+  final Function(Map<String, dynamic>) onUpload;
   const HomeMainContent({required this.onUpload});
 
   @override
   _HomeMainContentState createState() => _HomeMainContentState();
 }
 
-class _HomeMainContentState extends State<HomeMainContent>{
+class _HomeMainContentState extends State<HomeMainContent> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   Timer? _autoSlideTimer;
+  Uint8List? _pickedBytes;
+  String? _pickedPath;
+  String? _pickedName;
 
   final List<String> _cards = [
     'assets/images/1.png',
@@ -211,207 +216,177 @@ class _HomeMainContentState extends State<HomeMainContent>{
   ];
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
-    _startAutoSlide();
-  }
-
-  void _startAutoSlide(){
-    _autoSlideTimer = Timer.periodic(Duration(seconds: 3), (_){
-      if(_pageController.hasClients){
-        int nextPage = (_currentPage + 1) % _cards.length;
+    _autoSlideTimer = Timer.periodic(Duration(seconds: 3), (_) {
+      if (_pageController.hasClients) {
+        final next = (_currentPage + 1) % _cards.length;
         _pageController.animateToPage(
-          nextPage,
+          next,
           duration: Duration(milliseconds: 500),
           curve: Curves.easeInOut,
         );
-        setState(() => _currentPage = nextPage);
+        setState(() => _currentPage = next);
       }
     });
   }
 
   @override
-  void dispose(){
-    _pageController.dispose();
+  void dispose() {
     _autoSlideTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  /// PDF 파일 선택 및 업로드 처리
   Future<void> _pickPdf(BuildContext context) async {
-    /*final params = OpenFileDialogParams(
-      dialogType: OpenFileDialogType.document,
-      sourceType: SourceType.photoLibrary,
-      fileExtensionsFilter: ['pdf'],    // PDF만 허용  
-    );
-
-    final filePath = await FlutterFileDialog.pickFile(params: params);*/
-
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    if (result == null) return;
+
+    _pickedBytes = result.files.single.bytes;
+    _pickedPath = kIsWeb ? null : result.files.single.path;
+    _pickedName = result.files.single.name;
+    _confirmUpload(context);
+  }
+
+  void _confirmUpload(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        title: Text('$_pickedName 파일을 업로드할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _pickPdf(ctx);
+            },
+            child: Text('다시 선택'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _uploadToServer();
+            },
+            child: Text('확인'),
+          ),  
+        ],
+      ),
+    );
+  }
+
+  Future<void> _uploadToServer() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      barrierColor: Colors.black54,
+      builder: (_) => Center(child: LoadingAnimation()),
     );
 
-    if(result != null){
-      //final filePath = result.files.single.path!;
-      final fileName = result.files.single.name;
+    final bytes = _pickedBytes!;
+    final name = _pickedName!;
+    final path = _pickedPath;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-      print("파일 업로드 성공: $fileName");
+    final uri = Uri.parse('http://localhost:8080/api/files/analyze-pdf');
+    final req = http.MultipartRequest('POST', uri);
+    if (token != null) req.headers['Authorization'] = 'Bearer $token';
 
-   /* if (filePath != null) {
-      final file = File(filePath);
-      final fileName = file.uri.pathSegments.last;*/
+    if (kIsWeb || path == null) {
+      req.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: name,
+        contentType: MediaType('application', 'pdf'),
+      ));
+    } else {
+      req.files.add(await http.MultipartFile.fromPath(
+        'file',
+        path,
+        contentType: MediaType('application', 'pdf'),
+      ));
+    }
 
-      // 업로드 확인 팝업
+    final streamed = await req.send();
+    final resp = await http.Response.fromStream(streamed);
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      // analyze-pdf는 {id, filename} 객체 리턴
+      final utf8Body = utf8.decode(resp.bodyBytes);
+      final Map<String, dynamic> data = jsonDecode(utf8Body);
+      final book = {
+        'title': data['filename'].toString().replaceAll('.pdf', ''),
+        'status': '읽고 있는 책',
+        'progress': 0.0,
+        'preview': '',
+        'sentences': <String>[],
+      };
+      widget.onUpload(book);
+    } else {
       showDialog(
         context: context,
-        builder: (context) =>
-            AlertDialog(
-              title: Text('$fileName 파일을 업로드하시겠습니까?'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _pickPdf(context);
-                  }, // 팝업 닫고 다시 선택
-                  child: Text('다시 선택'),
-                ),
-                TextButton(
-                  onPressed: ()  async {
-
-                    Navigator.of(context).pop();
-                    showLoadingDialog(context);
-                    await Future.delayed(Duration(seconds: 3));
-                    Navigator.pop(context);
-
-                    final newBook = {
-                      'title': fileName.replaceAll('.pdf', ' '),
-                      'status': '읽고 있는 책',
-                      'progress': 0.0,
-                      // 더미 텍스트
-                      'text':  '''  
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-“(중략)모두가 바쁜 평가 기간임에도 학급 내 분리 배출과 청소 같은 곳은 일도 마다하지 않는 학생입니다. 다만…”
-
-지난 학기 성적표를 읽어 내려가던 하늘이 멈칫했다.
-“다만 전하는 학생은 좋은 성적을 받기 위해 과도하게 집착하는 경향이 있습니다. 과한 성적 집착은 학생들로 하여금 긍정적이고 자발적인 성취 결과를 내지 못할 수 있으므로 전하는 학생은 이에 대한 각별한 유의가 필요합니다.”
-
-평가를 마치 읽은 하늘은 한숨을 푹 내쉬면서 탭 화면을 껐다.
-
-Academic Artificial Intelligence, 일명 AAI. 하늘이 고등학교 1학년일 때, 그러니까 불과 2년 전 대한민국 정부 주도 아래 전국 초, 중, 고등학교에 도입된 인공지능 학습 시스템이다. AAI는 명목상 학교 수업 ‘보조’, 시험 출제 ‘보조’, 재현 및 평가 ‘보조’ 등으로 개발되었지만 1년 만에 AAI의 편리함을 알아버린 선생님들이 어느 덧 AAI를 보조하지 못 참아있다.
-''',
-                    };
-                    Navigator.of(context).pop();    // 팝업 닫기
-                    widget.onUpload(newBook);              // 부모에 업로드 전달
-                  },
-                  child: Text('확인'),
-                ),
-              ],
-            ),
+        builder: (_) => AlertDialog(
+          title: Text('업로드 실패'),
+          content: Text('${resp.statusCode}: ${resp.body}'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('닫기'))
+          ],
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return Column(
       children: [
         Container(
           height: 70,
           color: Color(0xDDB2C29B),
           child: Center(
-            child: Image.asset('assets/logos/logo_horizontal.png',
-            height: 40)
-          )),
+            child: Image.asset('assets/logos/logo_horizontal.png', height: 40),
+          ),
+        ),
         Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-                itemCount: _cards.length,
-                itemBuilder: (context, index){
-                return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 5,
-                      offset: Offset(2, 4)
-                    )]
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Image.asset(
-                      _cards[index],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _cards.length,
+            itemBuilder: (_, i) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(2, 4))],
                 ),
-                );
-                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(_cards[i], fit: BoxFit.cover),
+                ),
+              ),
             ),
+          ),
         ),
         Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: ElevatedButton(
-                onPressed: () => _pickPdf(context),
-                child: Text('파일 업로드', style: TextStyle(fontSize: 40),),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black54,
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  elevation: 6
-                ),
+          padding: const EdgeInsets.only(bottom: 32),
+          child: ElevatedButton(
+            onPressed: () => _pickPdf(context),
+            child: Text('파일 업로드', style: TextStyle(fontSize: 40)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black54,
+              padding: EdgeInsets.symmetric(horizontal: 60, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              elevation: 6,
             ),
+          ),
         ),
       ],
     );
-  }
-
-  void showLoadingDialog(BuildContext context){
-    showDialog(
-        context: context,
-        barrierDismissible: false, // 바깥 탭으로 안 닫히도록
-        barrierColor: Colors.black.withOpacity(0.8),
-        builder: (context){
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LoadingAnimation(),
-                const SizedBox(height: 34,),
-                const Text(
-                  '파일을 업로드하는 중입니다...',
-                  style: TextStyle(
-                      color: Color(0xDDB2C29B),
-                      fontSize: 30,
-                    ),
-                )
-              ],
-            ),
-          );
-        },
-        );
   }
 }
