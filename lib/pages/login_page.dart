@@ -134,6 +134,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             child: Text('로그인'),
           ),
+          SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(

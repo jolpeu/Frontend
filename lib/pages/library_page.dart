@@ -5,7 +5,15 @@ import 'package:grad_front/pages/reader_page.dart';
 class LibraryPage extends StatefulWidget {
   final List<Map<String, dynamic>> books;
 
-  const LibraryPage({required this.books, Key? key}) : super(key: key);
+  final String userId;
+  final String apiBaseUrl;
+
+  const LibraryPage({
+    required this.books,
+    required this.userId,
+    required this.apiBaseUrl,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _LibraryPageState createState() => _LibraryPageState();
@@ -21,20 +29,33 @@ class _LibraryPageState extends State<LibraryPage> {
     return widget.books.where((book) => book['status'] == _filter).toList();
   }
 
+  void _openReader(Map<String, dynamic> book){
+    final String? bookId = (book['id'] ?? book['bookId'])?.toString();
+    if (bookId == null || bookId.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('bookId가 없어서 열 수 없습니다.')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) => ReaderPage(
+              title: (book['title'] ?? '제목 없음').toString(),
+              sentences: List<String>.from(book['sentences'] ?? const []),
+              bookId: bookId,
+              userId: widget.userId,
+              apiBaseUrl: widget.apiBaseUrl
+          )
+      )
+    );
+  }
+
   /// 책 카드 UI 생성
   Widget _buildBookCard(Map<String, dynamic> book) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ReaderPage(
-              title: book['title'],
-              sentences: List<String>.from(book['sentences'] ?? []),
-            ),
-          ),
-        );
-      },
+      onTap: () => _openReader(book),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -187,27 +208,16 @@ class _LibraryPageState extends State<LibraryPage> {
                             _buildBookCard(_filteredBooks[index]),
                       )
                     : ListView.builder(
-                        padding: EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         itemCount: _filteredBooks.length,
                         itemBuilder: (context, index) {
                           final book = _filteredBooks[index];
                           return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ReaderPage(
-                                    title: book['title'],
-                                    sentences:
-                                        List<String>.from(book['sentences'] ?? []),
-                                  ),
-                                ),
-                              );
-                            },
+                            onTap: () => _openReader(book),
                             child: ListTile(
                               title: Text(book['title']),
-                              subtitle: Text(book['preview'] ?? ''),
+                              //subtitle: Text(book['preview'] ?? ''),
                             ),
                           );
                         },
