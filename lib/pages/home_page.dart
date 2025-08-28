@@ -27,8 +27,8 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
     print('■ Home initState prefs 토큰: ${prefs.getString('token')}');
-
-    _userId =prefs.getString('userId');
+    // _userId =prefs.getString('userId');
+    _userId = prefs.getString('email');
     setState(() {});
   });
     _fetchMyBooks();
@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _fetchMyBooks() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final uri = Uri.parse('http://localhost:8080/api/files/list');
+    final uri = Uri.parse('${Config.apiBaseUrl}/api/files/list');
     final resp = await http.get(
       uri,
       headers: token != null ? {'Authorization': 'Bearer $token'} : {},
@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
       LibraryPage(
         books: _books,
         userId: _userId ?? '',
-        apiBaseUrl: apiBaseUrl,
+        apiBaseUrl: Config.apiBaseUrl,
       ),
       HomeMainContent(onUpload: _handleNewBook),
       MyPage(),
@@ -303,7 +303,7 @@ class _HomeMainContentState extends State<HomeMainContent> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    final uri = Uri.parse('http://localhost:8080/api/files/analyze-pdf');
+    final uri = Uri.parse('${Config.apiBaseUrl}/api/files/analyze-pdf');
     final req = http.MultipartRequest('POST', uri);
     if (token != null) req.headers['Authorization'] = 'Bearer $token';
 

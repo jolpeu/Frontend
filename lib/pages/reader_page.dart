@@ -192,7 +192,11 @@ class _ReaderPageState extends State<ReaderPage> {
     _debounceTimer?.cancel();
 
     final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-    _upsertProgress(offset: offset, ratio: _progress);
+    Future(() async {
+      try {
+        await _upsertProgress(offset: offset, ratio: _progress);
+      } catch (_) {}
+    });
 
 
     _scrollController.removeListener(_handleScroll);
@@ -203,10 +207,10 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvoked: (didPop) async{
+    return WillPopScope(
+      onWillPop: () async {
         await _saveNow();
+        return true;
       },
       child: GestureDetector(
         // 탭하면 상/하단바 UI
