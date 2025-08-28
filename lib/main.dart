@@ -7,6 +7,9 @@ import 'pages/onboarding_page.dart';
 import 'pages/signup_page.dart';
 import 'pages/LoginRedirectPage.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'config.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -53,7 +56,8 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpPage(),
         '/login-redirect': (context) => const LoginRedirectPage(), // fallback 용도
         '/my': (context) => MyPage(),
-        '/library': (context) => LibraryPage(books: []),
+        // '/library': (context) => LibraryPage(books: []),
+        '/library': (context) => const _LibraryRoute(),
         '/onboarding': (context) => OnboardingPage(),
       },
 
@@ -75,6 +79,45 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// ✅ LibraryPage로 들어가기 전에 userId/email 과 apiBaseUrl을 준비하는 래퍼
+class _LibraryRoute extends StatefulWidget {
+  const _LibraryRoute({Key? key}) : super(key: key);
+
+  @override
+  State<_LibraryRoute> createState() => _LibraryRouteState();
+}
+
+class _LibraryRouteState extends State<_LibraryRoute> {
+  String? _email;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email') ?? 'guest';
+    setState(() => _email = email);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_email == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return LibraryPage(
+      books: const [],               // TODO: 서버에서 불러오면 이 자리에서 넣기
+      userId: _email!,
+      apiBaseUrl: Config.apiBaseUrl,
     );
   }
 }
