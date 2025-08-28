@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:grad_front/pages/library_page.dart';
 import 'package:grad_front/pages/my_page.dart';
+import 'package:grad_front/config.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -19,11 +20,16 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
   List<Map<String, dynamic>> _books = [];
 
+  String? _userId;
+
   @override
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
     print('■ Home initState prefs 토큰: ${prefs.getString('token')}');
+
+    _userId =prefs.getString('userId');
+    setState(() {});
   });
     _fetchMyBooks();
   }
@@ -43,6 +49,7 @@ class _HomePageState extends State<HomePage> {
       final books = data.map((m) {
         final sentences = List<String>.from(m['sentences'] ?? []);
         return {
+          'id': (m['id'] ?? m['bookId'])?.toString(),
           'title': m['filename'].toString().replaceAll('.pdf', ''),
           'status': '읽고 있는 책',
           'progress': 0.0,
@@ -71,7 +78,11 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
-      LibraryPage(books: _books),
+      LibraryPage(
+        books: _books,
+        userId: _userId ?? '',
+        apiBaseUrl: apiBaseUrl,
+      ),
       HomeMainContent(onUpload: _handleNewBook),
       MyPage(),
     ];
