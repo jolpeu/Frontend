@@ -44,7 +44,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
   }
 
-  void _openReader(PdfAnalysis book) {
+  void _openReader(PdfAnalysis book) async {
     final String bookId = book.id;
     if (bookId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,17 +54,28 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
 
-    Navigator.push(
+    final result = await Navigator.push<double>(
       context, MaterialPageRoute(
-      builder: (_) => ReaderPage(
-        title: book.filename.replaceAll('.pdf', ''),
-        results: book.results,
-        bookId: bookId,
-        userId: widget.userId,
-        apiBaseUrl: widget.apiBaseUrl,
-        ),
+        builder: (_) => ReaderPage(
+          title: book.filename.replaceAll('.pdf', ''),
+          results: book.results,
+          bookId: bookId,
+          userId: widget.userId,
+          apiBaseUrl: widget.apiBaseUrl,
+          ),
       ),
     );
+
+    // 진행률이 넘어오면 책 카드의 진행률 갱신
+    if (result != null) {
+      // 0.0 ~ 1.0 범위로 안전하게 보정
+      final double clamped = result < 0.0 ? 0.0 : (result > 1.0 ? 1.0 : result);
+      setState(() {
+        book.progress = clamped; // PdfAnalysis 모델의 progress 필드 업데이트
+      });
+    }
+
+
   }
 
   /// 책 카드 UI 생성

@@ -320,9 +320,9 @@ class _ReaderPageState extends State<ReaderPage> {
                     },
                 ),
 
-                const Spacer(),
+                const Spacer(flex: 1),
                 Image.asset('assets/logos/logo_horizontal.png', height: 40, ),
-                const Spacer(),
+                const Spacer(flex: 2),
               ],
             ),
     ),
