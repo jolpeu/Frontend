@@ -325,6 +325,7 @@ class _MyPageState extends State<MyPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('로그아웃'),
         content: const Text('정말 로그아웃 하시겠어요?'),
