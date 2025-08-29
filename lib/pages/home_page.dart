@@ -58,35 +58,36 @@ class _HomePageState extends State<HomePage> {
         .toList();
 
     // 2. 각 책의 진행률(ReadingProgress)을 병렬로 가져오기
-    final List<Future> progressFutures = [];
-    for (var book in books) {
+    final progressFutures = books.map((book) async {
       final progressUri = Uri.parse('${Config.apiBaseUrl}/reading-progress')
           .replace(queryParameters: {
         'userId': book.userId,
         'bookId': book.id,
       });
 
-      progressFutures.add(
-        http.get(progressUri, headers: {'Authorization': 'Bearer $token'})
-            .then((progressResp) {
-          if (progressResp.statusCode == 200 && progressResp.body.isNotEmpty) {
-            final progressData = jsonDecode(progressResp.body);
-            // 가져온 진행률(ratio)을 book 객체에 업데이트!
-            book.progress = (progressData['ratio'] as num?)?.toDouble() ?? 0.0;
-          }
-        }).catchError((_) {
-          // 진행률 조회 실패 시 progress는 기본값 0.0 유지
-        }),
-      );
-    }
-    
-    // 모든 진행률 조회가 끝날 때까지 기다림
+      try {
+        final progressResp = await http.get(
+          progressUri,
+          headers: {'Authorization': 'Bearer $token'},
+        );
+
+        if (progressResp.statusCode == 200 && progressResp.body.isNotEmpty) {
+          final progressData = jsonDecode(progressResp.body);
+          book.progress = (progressData['ratio'] as num?)?.toDouble() ?? 0.0;
+        }
+      } catch (e) {
+        print('Fetch ERROR: $e');
+      }
+    }).toList();
+
     await Future.wait(progressFutures);
 
     // 3. 진행률까지 합쳐진 완전체 책 목록으로 UI 업데이트
-    setState(() {
-      _books = books;
-    });
+    if (mounted) {
+      setState(() {
+        _books = books;
+      });
+    }
   }
 
   void _handleNewBook(PdfAnalysis book) {

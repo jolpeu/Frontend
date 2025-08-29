@@ -103,7 +103,7 @@ class _ReaderPageState extends State<ReaderPage> {
     try {
       final res = await http.put(
         _putProgressUri,
-        // ✨ 핵심: 헤더에 인증 토큰 추가
+        // 헤더에 인증 토큰 추가
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_token',
