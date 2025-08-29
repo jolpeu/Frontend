@@ -222,8 +222,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 : _viewMode == 'grid'
                     ? GridView.builder(
                         padding: EdgeInsets.all(8),
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
@@ -233,9 +232,8 @@ class _LibraryPageState extends State<LibraryPage> {
                         itemBuilder: (context, index) =>
                             _buildBookCard(_filteredBooks[index]),
                       )
-                    : ListView.builder(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                    : ListView.separated(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         itemCount: _filteredBooks.length,
                         itemBuilder: (context, index) {
                           final book = _filteredBooks[index];
@@ -243,10 +241,15 @@ class _LibraryPageState extends State<LibraryPage> {
                             onTap: () => _openReader(book),
                             child: ListTile(
                               title: Text(book.filename.replaceAll('.pdf', '')),
-                              //subtitle: Text(book['preview'] ?? ''),
+                              // subtitle: Text(book.preview ?? ''), // preview 있으면 표시
                             ),
                           );
                         },
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Colors.grey.shade300,
+                        ),
                       ),
           ),
         ],
