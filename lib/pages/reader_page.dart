@@ -85,7 +85,8 @@ class _ReaderPageState extends State<ReaderPage> {
 
       // 200이고 바디가 비어있지 않으면 JSON 파싱
       if(res.statusCode == 200 && res.body.isNotEmpty){
-        final map = jsonDecode(res.body);
+        final body = utf8.decode(res.bodyBytes);
+        final map = jsonDecode(body);
         if(map is Map<String, dynamic>) return map;
       }
     } catch (_) {}
@@ -128,11 +129,28 @@ class _ReaderPageState extends State<ReaderPage> {
   // 페이지가 그려지고 나서 저장된 offset으로 점프
   Future<void> _restoreFromServer() async {
     final data = await _fetchProgress();
-    if(!mounted) return;
+    // if(!mounted) return;
+    //
+    // if(data != null && data['offset'] is num){
+    //   _savedOffset = (data['offset'] as num).toDouble();
+    //   WidgetsBinding.instance.addPostFrameCallback((_){
+    //     final max = _scrollController.position.maxScrollExtent;
+    //     _scrollController.jumpTo(_savedOffset.clamp(0.0, max));
+    //   });
+    // }
+    if (!mounted || data == null) return;
 
-    if(data != null && data['offset'] is num){
+    final hasOffset = data['offset'] is num;
+    final hasRatio  = data['ratio'] is num;
+
+    if (hasRatio) {
+      setState(() => _progress = (data['ratio'] as num).toDouble().clamp(0.0, 1.0));
+    }
+
+    if (hasOffset) {
       _savedOffset = (data['offset'] as num).toDouble();
-      WidgetsBinding.instance.addPostFrameCallback((_){
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scrollController.hasClients) return;
         final max = _scrollController.position.maxScrollExtent;
         _scrollController.jumpTo(_savedOffset.clamp(0.0, max));
       });
