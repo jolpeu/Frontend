@@ -164,7 +164,6 @@ class _ReaderPageState extends State<ReaderPage> {
     _results = widget.results;
     _startHideTimer();
     _scrollController.addListener(_handleScroll);   // 스크롤 시 진행률 계산하는 리스너
-    _restoreFromServer();
     SharedPreferences.getInstance().then((prefs) {
       _token = prefs.getString('token');
       // 토큰을 가져온 후에 서버에서 진행률 복원
