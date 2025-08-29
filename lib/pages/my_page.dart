@@ -378,9 +378,10 @@ class _MyPageState extends State<MyPage> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('token');
     await prefs.remove('isLoggedIn');
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (Route<dynamic> route) => false);
   }
 
   // ─────────────────────────── 통계 위젯 ───────────────────────────
