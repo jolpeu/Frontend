@@ -65,11 +65,6 @@ class _HomePageState extends State<HomePage> {
         'bookId': book.id,
       });
 
-      print('--- 🔍 Progress Check ---');
-      print('Querying for userId: [${book.userId}]');
-      print('Querying for bookId: [${book.id}]');
-      print('------------------------');
-
       try {
         final progressResp = await http.get(
           progressUri,
