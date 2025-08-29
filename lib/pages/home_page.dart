@@ -404,7 +404,7 @@ class _HomeMainContentState extends State<HomeMainContent> {
           padding: const EdgeInsets.only(bottom: 32),
           child: ElevatedButton(
             onPressed: () => _pickPdf(context),
-            child: Text('파일 업로드', style: TextStyle(fontSize: 40)),
+            child: Text('파일 업로드', style: TextStyle(fontSize: 30)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: Colors.black54,

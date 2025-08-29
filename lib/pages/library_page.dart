@@ -30,7 +30,18 @@ class _LibraryPageState extends State<LibraryPage> {
     // 추후 PdfAnalysis 모델에 status 필드를 추가하고 HomePage에서 값을 채워주면 필터링이 완성됩니다.
     // if (_filter == '전체') return widget.books;
     // return widget.books.where((book) => book.status == _filter).toList();
-    return widget.books; // 임시로 전체 목록 반환
+    //return widget.books; // 임시로 전체 목록 반환
+    bool completed(PdfAnalysis b) => (b.progress >= 0.999);
+
+    switch (_filter) {
+      case '다 읽은 책':
+        return widget.books.where(completed).toList();
+      case '읽고 있는 책':
+        return widget.books.where((b) => !completed(b)).toList();
+      case '전체':
+      default:
+        return widget.books;
+    }
   }
 
   void _openReader(PdfAnalysis book) {
@@ -42,15 +53,15 @@ class _LibraryPageState extends State<LibraryPage> {
       return;
     }
 
-   Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ReaderPage(
-          title: book.filename.replaceAll('.pdf', ''),
-          results: book.results,
-          bookId: bookId,
-          userId: widget.userId,
-          apiBaseUrl: widget.apiBaseUrl,
+
+    Navigator.push(
+      context, MaterialPageRoute(
+      builder: (_) => ReaderPage(
+        title: book.filename.replaceAll('.pdf', ''),
+        results: book.results,
+        bookId: bookId,
+        userId: widget.userId,
+        apiBaseUrl: widget.apiBaseUrl,
         ),
       ),
     );

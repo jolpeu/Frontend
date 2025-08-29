@@ -234,7 +234,6 @@ class _ReaderPageState extends State<ReaderPage> {
       } catch (_) {}
     });
 
-
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     super.dispose();
@@ -245,8 +244,8 @@ class _ReaderPageState extends State<ReaderPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await _saveNow();
-        return true;
+          await _saveNow();
+          return true;
       },
       child: GestureDetector(
         // 탭하면 상/하단바 UI
@@ -304,35 +303,42 @@ class _ReaderPageState extends State<ReaderPage> {
   // 2. 제목
   Widget _buildTopBar() {
     return Column(
-      children: [
-        // 상단 로고
-        Container(
-          height: 70,
-          color: Color(0xDDB3C39C),
-          child: Center(
-            child: Image.asset(
-              'assets/logos/logo_horizontal.png',
-              height: 40,
-            ),
-          ),
-        ),
+        children: [
+          // 상단 로고
+          Container(
+            height: 70,
+            color: Color(0xDDB3C39C),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Image.asset('assets/icons/icon_arrowback.png', height: 28,),
+                  onPressed: () async {
+                    await _saveNow();
+                    if(mounted){
+                      Navigator.pop(context, _progress);
+                    }
+                    },
+                ),
 
-        // 제목
-        Container(
-          color: Color(0xFFDEE5D4),
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 책 제목
-              Text(
-                widget.title,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ],
-          ),
+                const Spacer(),
+                Image.asset('assets/logos/logo_horizontal.png', height: 40, ),
+                const Spacer(),
+              ],
+            ),
+    ),
+    // 제목
+    Container(
+      color: Color(0xFFDEE5D4),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // 책 제목
+        Text( widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+          ],
         ),
-      ],
+      ),
+        ],
     );
   }
 
