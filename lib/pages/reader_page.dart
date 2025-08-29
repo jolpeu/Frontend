@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:grad_front/models/analysis_result.dart';
 
 // Reader Page
 // 스크롤형 이북 리더 화면
@@ -10,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // 문장 리스트(ListView)를 스크롤해서 읽는 구조
 class ReaderPage extends StatefulWidget {
   final String title;                 // 책 제목 - 화면 상단 표기
-  final List<String> sentences;       // 문장 단위로 나눠진 텍스트 목록
+  final List<AnalysisResult> results;       // 문장 단위로 나눠진 텍스트 목록
 
   final String bookId;
   final String userId;
@@ -20,7 +21,7 @@ class ReaderPage extends StatefulWidget {
   const ReaderPage({
     Key? key,
     required this.title,
-    required this.sentences,
+    required this.results,
     required this.bookId,
     required this.userId,
     required this.apiBaseUrl,
@@ -33,7 +34,7 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage> {
   String? _token;
-  late List<String> _sentences;
+  late List<AnalysisResult> _results;
   bool _showUI = true;
   Timer? _hideTimer;
   final ScrollController _scrollController = ScrollController();
@@ -142,7 +143,7 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   void initState() {
     super.initState();
-    _sentences = widget.sentences;
+    _results = widget.results;
     _startHideTimer();
     _scrollController.addListener(_handleScroll);   // 스크롤 시 진행률 계산하는 리스너
     _restoreFromServer();
@@ -253,12 +254,12 @@ class _ReaderPageState extends State<ReaderPage> {
                   },
                   child: ListView.builder(
                     controller: _scrollController,    // 진행률 계산 컨트롤러
-                    itemCount: _sentences.length,
+                    itemCount: _results.length,
                     itemBuilder: (_, index) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         child: Text(
-                          _sentences[index],
+                          _results[index].sentence,
                           style: TextStyle(fontSize: 18, height: 1.5),
                         ),
                       );

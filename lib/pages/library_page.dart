@@ -47,7 +47,7 @@ class _LibraryPageState extends State<LibraryPage> {
       MaterialPageRoute(
         builder: (_) => ReaderPage(
           title: book.filename.replaceAll('.pdf', ''),
-          sentences: book.results.map((result) => result.sentence).toList(),
+          results: book.results,
           bookId: bookId,
           userId: widget.userId,
           apiBaseUrl: widget.apiBaseUrl,
