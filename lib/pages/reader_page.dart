@@ -1,5 +1,6 @@
 // ReaderPage.dart
 import 'dart:convert';
+//import 'dart:nativewrappers/_internal/vm/lib/internal_patch.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
@@ -141,7 +142,6 @@ class _ReaderPageState extends State<ReaderPage> {
 
   String _buildMediaUrl(String base, String dir, String fileName){
     final encoded = Uri.encodeComponent(fileName);
-    // ⭐️ 이 부분을 수정했습니다. '/audio/' 경로를 제거했습니다.
     return '$base/$dir/$encoded';
   }
 
@@ -218,7 +218,6 @@ class _ReaderPageState extends State<ReaderPage> {
     final isAtStart = pos <= const Duration(milliseconds: 250);
     if (_lastEffectIndex == index && !isAtStart) return;
     _lastEffectIndex = index;
-    // ⭐️ 이 부분을 수정했습니다. '/audio/' 경로를 제거했습니다.
     final effectUrl = _buildMediaUrl("http://127.0.0.1:8000", 'effects', effectFile);
     await _sfxPlayer.setVolume(_sfxVolume);
     await _playEffectOnce(effectUrl);
@@ -348,11 +347,17 @@ class _ReaderPageState extends State<ReaderPage> {
                     controller: _scrollController,
                     itemCount: _results.length,
                     itemBuilder: (_, index) {
+                      final isCurrent = index == _currentIndex;
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         child: Text(
                           _results[index].sentence,
-                          style: TextStyle(fontSize: 18, height: 1.5),
+                          style: TextStyle(
+                              fontSize: 18,
+                              height: 1.5,
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              backgroundColor: isCurrent ? Colors.lime.withOpacity(0.2) : Colors.transparent,
+                          ),
                         ),
                       );
                     },
