@@ -27,7 +27,7 @@ class PdfAnalysis {
 
     return PdfAnalysis(
       id: json['id'] ?? '',
-      userId: json['userid'] ?? '',
+      userId: json['userId'] ?? '',
       filename: json['filename'] ?? '제목 없음',
       uploadedTime: DateTime.tryParse(json['uploadedTime'] ?? '') ?? DateTime.now(),
       results: parsedResults,
