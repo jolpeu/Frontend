@@ -65,11 +65,6 @@ class _HomePageState extends State<HomePage> {
         'bookId': book.id,
       });
 
-      print('--- 🔍 Progress Check ---');
-      print('Querying for userId: [${book.userId}]');
-      print('Querying for bookId: [${book.id}]');
-      print('------------------------');
-
       try {
         final progressResp = await http.get(
           progressUri,
@@ -125,8 +120,6 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (idx) => setState(() => _currentIndex = idx),
-        selectedItemColor: Color(0xFFB3C39C),
-        unselectedItemColor: Color(0xFF676767),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.book_outlined),
@@ -297,26 +290,91 @@ class _HomeMainContentState extends State<HomeMainContent> {
     showDialog(
       context: ctx,
       builder: (_) => AlertDialog(
-        title: Text('$_pickedName 파일을 업로드할까요?'),
+        backgroundColor: Colors.white,
+        // backgroundColor: const Color(0xFFDEE5D4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.upload_file, size: 22),
+            const SizedBox(width: 8),
+            const Text('파일 업로드 확인'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('다음 파일을 업로드할까요?'),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                // color: const Color(0xFFDEE5D4),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                _pickedName ?? '',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _pickPdf(ctx);
-            },
-            child: Text('다시 선택'),
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              children: [
+                // 다시 선택
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _pickPdf(ctx);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      foregroundColor: Colors.black87,
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('다시 선택'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // 업로드
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _uploadToServer();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB3C39C), // 키컬러
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('업로드'),
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _uploadToServer();
-            },
-            child: Text('확인'),
-          ),  
         ],
       ),
     );
   }
+
 
   Future<void> _uploadToServer() async {
     showDialog(

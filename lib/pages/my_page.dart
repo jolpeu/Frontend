@@ -128,16 +128,21 @@ class _MyPageState extends State<MyPage> {
 
     // 파일목록 표준화
     final books = listJson.map<Map<String, dynamic>>((m) {
-      final map = Map<String, dynamic>.from(m as Map);
-      final sentences = List<String>.from(map['sentences'] ?? const []);
-      return {
-        'id': (map['id'] ?? map['bookId'])?.toString(),
-        'title': (map['filename'] ?? map['title'] ?? '').toString().replaceAll('.pdf', ''),
-        'filename': (map['filename'] ?? '').toString(),
-        'sentences': sentences,
-        'raw': map,
-      };
-    }).toList();
+    final map = Map<String, dynamic>.from(m as Map);
+
+    final resultsData = List<Map<String, dynamic>>.from(map['results'] ?? const []);
+
+    final sentences = resultsData.map((r) => (r['sentence'] ?? '').toString()).toList();
+
+    return {
+      'id': (map['id'] ?? map['bookId'])?.toString(),
+      'title': (map['filename'] ?? map['title'] ?? '').toString().replaceAll('.pdf', ''),
+      'filename': (map['filename'] ?? '').toString(),
+      'sentences': sentences,
+      'results': resultsData,
+      'raw': map,
+    };
+  }).toList();
 
     bookCount = books.length;
 
@@ -194,20 +199,18 @@ class _MyPageState extends State<MyPage> {
     });
 
     recent = progressList
-        .where((p) => p['updatedAt'] != null)
-        .take(3)
-        .map<Map<String, dynamic>>((p) {
-      final b = Map<String, dynamic>.from(p['book'] as Map);
-      return {
-        'id': b['id'],
-        'title': b['title'],
-        'sentences': b['sentences'],
-        // ReaderPage(results: ...)에 넣기 위해 results 형태도 같이 넘겨둠
-        'results': (b['sentences'] as List<dynamic>)
-            .map((s) => {'sentence': s.toString()})
-            .toList(),
-      };
-    }).toList();
+      .where((p) => p['updatedAt'] != null)
+      .take(3)
+      .map<Map<String, dynamic>>((p) {
+        final b = Map<String, dynamic>.from(p['book'] as Map);
+        return {
+          'id': b['id'],
+          'title': b['title'],
+          'sentences': b['sentences'], // 위에서 만든 sentences 리스트
+          'results': b['results'],     // 위에서 만든, emotion 정보 등이 포함된 results 리스트
+        };
+      }).toList();
+
 
     if (!mounted) return;
     setState(() {
@@ -325,6 +328,7 @@ class _MyPageState extends State<MyPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('로그아웃'),
         content: const Text('정말 로그아웃 하시겠어요?'),
@@ -378,9 +382,10 @@ class _MyPageState extends State<MyPage> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('token');
     await prefs.remove('isLoggedIn');
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (Route<dynamic> route) => false);
   }
 
   // ─────────────────────────── 통계 위젯 ───────────────────────────
