@@ -48,6 +48,13 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontSize: 16),
           titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFFDEE5D4),
+          selectedItemColor: Color(0xFF2C5E1A),
+          unselectedItemColor: Color(0xFF676767),
+          showSelectedLabels: true,  // 라벨 표시 여부
+          showUnselectedLabels: true,
+        ),
       ),
       initialRoute: '/onboarding',
       routes: {
