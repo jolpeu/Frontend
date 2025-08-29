@@ -1,17 +1,18 @@
+// ReaderPage.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:grad_front/models/analysis_result.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:grad_front/config.dart';
 
 // Reader Page
-// 스크롤형 이북 리더 화면
-// 상/하단바 UI는 일정 시간 후 사라짐(터치 시 생성)
-// 문장 리스트(ListView)를 스크롤해서 읽는 구조
 class ReaderPage extends StatefulWidget {
-  final String title;                 // 책 제목 - 화면 상단 표기
-  final List<AnalysisResult> results;       // 문장 단위로 나눠진 텍스트 목록
+  final String title;
+  final List<AnalysisResult> results;
 
   final String bookId;
   final String userId;
@@ -39,8 +40,8 @@ class _ReaderPageState extends State<ReaderPage> {
   Timer? _hideTimer;
   final ScrollController _scrollController = ScrollController();
 
-  bool _isPlaying = false;      // TTS 재생 상태(재생/일시정지 토글)
-  double _progress = 0.0;       // 독서 진행률 - 하단바
+  bool _isPlaying = false;
+  double _progress = 0.0;
   double _savedOffset = 0.0;
   Timer? _debounceTimer;
 
@@ -48,30 +49,19 @@ class _ReaderPageState extends State<ReaderPage> {
   // 서버 통신: 진행률 API
 
   // Get /reading-progress
-  // - 특정 유저(userId)가 특정 책(bookId)을 어디까지 읽었는지 조회
-  // - 쿼리 스트링으로 userId, bookId를 넘김
-
-  // EX) GET http://localhost:8080/reading-progress?userId=XXX&bookId=XXX
   Uri get _getProgressUri => Uri.parse(
-    '${widget.apiBaseUrl}/reading-progress')
+      '${widget.apiBaseUrl}/reading-progress')
       .replace(queryParameters: {
-        'userId': widget.userId,
-        'bookId': widget.bookId,
+    'userId': widget.userId,
+    'bookId': widget.bookId,
   });
 
 
   // Put /reading-progress
-  // - 진행 상황 저장
-  // - JSON 바디로 userId, bookId, offset, ratio, updateAt 전송
-  // offset: 스크롤 위치, ratio: 전체 중 몇 %
-  // EX) PUT http://localhost:8080/reading-progress
   Uri get _putProgressUri => Uri.parse(
-    '${widget.apiBaseUrl}/reading-progress');
+      '${widget.apiBaseUrl}/reading-progress');
 
 
-  // 서버에서 프론트로 진행률 불러오기(없으면 null)
-  // GET /reading-progress?userId=xxx&bookId=xxx
-  // 성공 시 200 JSON 객체 기대
   Future<Map<String, dynamic>?> _fetchProgress() async {
     if (_token == null) return null;
     try {
@@ -82,8 +72,6 @@ class _ReaderPageState extends State<ReaderPage> {
           'Authorization': 'Bearer $_token',
         },
       );
-
-      // 200이고 바디가 비어있지 않으면 JSON 파싱
       if(res.statusCode == 200 && res.body.isNotEmpty){
         final body = utf8.decode(res.bodyBytes);
         final map = jsonDecode(body);
@@ -93,18 +81,14 @@ class _ReaderPageState extends State<ReaderPage> {
     return null;
   }
 
-  // 서버에 진행률 저장/업데이트(업서트)
-  // PUT /reading-progress
   Future<void> _upsertProgress({
     required double offset,
     required double ratio,
-}) async {
+  }) async {
     if (_token == null) return;
-
     try {
       final res = await http.put(
         _putProgressUri,
-        // 헤더에 인증 토큰 추가
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_token',
@@ -112,8 +96,8 @@ class _ReaderPageState extends State<ReaderPage> {
         body: jsonEncode({
           'userId': widget.userId,
           'bookId': widget.bookId,
-          'offset': offset,         // 스크롤 위치
-          'ratio': ratio,           // 진행률
+          'offset': offset,
+          'ratio': ratio,
           'updatedAt': DateTime.now().toIso8601String(),
         }),
       );
@@ -121,32 +105,18 @@ class _ReaderPageState extends State<ReaderPage> {
         debugPrint('진행률 업서트 실패: ${res.statusCode} ${res.body}');
       }
     } catch(e){
-        debugPrint('진행률 업서트 에러: $e');
+      debugPrint('진행률 업서트 에러: $e');
     }
   }
 
-  // 앱 시작 시 서버 진행률(스크롤) 복원
-  // 페이지가 그려지고 나서 저장된 offset으로 점프
   Future<void> _restoreFromServer() async {
     final data = await _fetchProgress();
-    // if(!mounted) return;
-    //
-    // if(data != null && data['offset'] is num){
-    //   _savedOffset = (data['offset'] as num).toDouble();
-    //   WidgetsBinding.instance.addPostFrameCallback((_){
-    //     final max = _scrollController.position.maxScrollExtent;
-    //     _scrollController.jumpTo(_savedOffset.clamp(0.0, max));
-    //   });
-    // }
     if (!mounted || data == null) return;
-
     final hasOffset = data['offset'] is num;
     final hasRatio  = data['ratio'] is num;
-
     if (hasRatio) {
       setState(() => _progress = (data['ratio'] as num).toDouble().clamp(0.0, 1.0));
     }
-
     if (hasOffset) {
       _savedOffset = (data['offset'] as num).toDouble();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -157,51 +127,179 @@ class _ReaderPageState extends State<ReaderPage> {
     }
   }
 
+  final _ttsPlayer = AudioPlayer();
+  final _sfxPlayer = AudioPlayer();
+  bool _audioReady = false;
+  List<AnalysisResult> _analysis = [];
+  int _currentIndex = 0;
+
+
+  // --------- sfx 옵션
+  bool _sfxEnabled = true;
+  double _sfxVolume = 0.35;
+  int _lastEffectIndex = -1;
+
+  String _buildMediaUrl(String base, String dir, String fileName){
+    final encoded = Uri.encodeComponent(fileName);
+    // ⭐️ 이 부분을 수정했습니다. '/audio/' 경로를 제거했습니다.
+    return '$base/$dir/$encoded';
+  }
+
+
+  // 오디오 초기화
+  Future<void> _initAudio() async {
+    try{
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.speech());
+
+
+
+      _analysis = widget.results;
+
+      // 파일명 -> url로 변경
+      final ttsChildren = _analysis
+          .where((r) => r.ttsFile.isNotEmpty)
+          .map((r) => AudioSource.uri(
+        Uri.parse(_buildMediaUrl("http://127.0.0.1:8000", 'tts', r.ttsFile)),
+      )).toList();
+
+      for (var r in _analysis) {
+        if (r.ttsFile.isNotEmpty) {
+          final url = _buildMediaUrl("http://127.0.0.1:8000", 'tts', r.ttsFile);
+          debugPrint('TTS URL: $url');
+        }
+      }
+
+      if (ttsChildren.isEmpty) {
+        throw Exception('재생 가능한 TTS가 없습니다.');
+      }
+
+      final playlist = ConcatenatingAudioSource(children: ttsChildren);
+      await _ttsPlayer.setAudioSource(playlist, preload: true);
+
+      _ttsPlayer.currentIndexStream.listen((i) {
+        if (i == null) return;
+        setState(() => _currentIndex = i);
+        _maybePlayEffectIfNeeded(i);
+      });
+
+      _ttsPlayer.playerStateStream.listen((s) {
+        setState(() => _isPlaying = s.playing);
+      });
+
+      await _sfxPlayer.setVolume(_sfxVolume);
+      setState(() => _audioReady = true);
+    } catch(e){
+      debugPrint('오디오 초기화 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('오디오 초기화 실패: $e')),
+        );
+      }
+    }
+  }
+
+
+  Future<void> _playEffectOnce(String url) async {
+    try {
+      await _sfxPlayer.setUrl(url);
+      await _sfxPlayer.play();
+    } catch (e) {
+      debugPrint('효과음 재생 실패: $e');
+    }
+  }
+
+  Future<void> _maybePlayEffectIfNeeded(int index) async {
+    if (!_sfxEnabled) return;
+    if (index < 0 || index >= _analysis.length) return;
+    final effectFile = _analysis[index].effectFile;
+    if (effectFile.isEmpty) return;
+    final pos = _ttsPlayer.position;
+    final isAtStart = pos <= const Duration(milliseconds: 250);
+    if (_lastEffectIndex == index && !isAtStart) return;
+    _lastEffectIndex = index;
+    // ⭐️ 이 부분을 수정했습니다. '/audio/' 경로를 제거했습니다.
+    final effectUrl = _buildMediaUrl("http://127.0.0.1:8000", 'effects', effectFile);
+    await _sfxPlayer.setVolume(_sfxVolume);
+    await _playEffectOnce(effectUrl);
+  }
+
   // 라이프 사이클
   @override
   void initState() {
     super.initState();
     _results = widget.results;
     _startHideTimer();
-    _scrollController.addListener(_handleScroll);   // 스크롤 시 진행률 계산하는 리스너
+    _scrollController.addListener(_handleScroll);
     SharedPreferences.getInstance().then((prefs) {
       _token = prefs.getString('token');
-      // 토큰을 가져온 후에 서버에서 진행률 복원
       _restoreFromServer();
+      _initAudio();
     });
   }
 
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _debounceTimer?.cancel();
+    final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+    Future(() async {
+      try {
+        await _upsertProgress(offset: offset, ratio: _progress);
+      } catch (_) {}
+    });
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    _sfxPlayer.dispose();
+    _ttsPlayer.dispose();
+    super.dispose();
+  }
 
-
-  // 스크롤 리스너 - 스크롤 위치로부터 진행률 계산해 상태 반영
-  // 사용자가 스크롤할 때마다 offset/ratio 계산
   void _handleScroll() {
     if (!_scrollController.hasClients) return;
-    final max = _scrollController.position.maxScrollExtent;   // 끝까지 내렸을 때의 최대 스크롤 범위
-    final offset = _scrollController.offset;                  // 현재 스크롤 오프셋(위에서 얼마나 내려왔는지)
-    final progress = (offset / (max == 0 ? 1 : max)).clamp(0.0, 1.0);   // 0으로 나누기 방지
-    setState(() => _progress = progress);                     // 진행률 상태 업데이트
-
-    // 디바운스
-    // 스크롤 멈춘 뒤 500ms 지나면 저장
+    final max = _scrollController.position.maxScrollExtent;
+    final offset = _scrollController.offset;
+    final progress = (offset / (max == 0 ? 1 : max)).clamp(0.0, 1.0);
+    setState(() => _progress = progress);
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), (){
       _upsertProgress(offset: offset, ratio: progress);
     });
   }
 
-  // 페이지 닫기 직전에는 즉시 저장 한번 더
   Future<void> _saveNow() async {
     final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
     await _upsertProgress(offset: offset, ratio: _progress);
   }
 
-  // 하단 재생/일시정지 버튼 토글 & TTS
-  void _togglePlayPause() {
-    setState(() => _isPlaying = !_isPlaying);
-    // TODO: 연동할 TTS 기능 구현
+  // ---------------- 🔊 플레이어 컨트롤 ----------------
+  Future<void> _playFrom(int index) async {
+    if (!_audioReady) return;
+    _lastEffectIndex = -1;
+    await _ttsPlayer.seek(Duration.zero, index: index);
+    await _maybePlayEffectIfNeeded(index);
+    await _ttsPlayer.play();
   }
 
+  Future<void> _prev() async {
+    if (!_audioReady) return;
+    await _ttsPlayer.seekToPrevious();
+  }
+
+  Future<void> _next() async {
+    if (!_audioReady) return;
+    await _ttsPlayer.seekToNext();
+  }
+
+  void _togglePlayPause() {
+    if (!_audioReady) return;
+    if (_ttsPlayer.playing) {
+      _ttsPlayer.pause();
+    } else {
+      _maybePlayEffectIfNeeded(_currentIndex);
+      _ttsPlayer.play();
+    }
+  }
 
   // 상/하단바 숨기는 타이머 - 3초 뒤에 UI 숨김
   void _startHideTimer() {
@@ -222,46 +320,24 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   @override
-  void dispose() {
-    _hideTimer?.cancel();
-    _debounceTimer?.cancel();
-
-    final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-    Future(() async {
-      try {
-        await _upsertProgress(offset: offset, ratio: _progress);
-      } catch (_) {}
-    });
-
-    _scrollController.removeListener(_handleScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-
-  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-          await _saveNow();
-          return true;
+        await _saveNow();
+        return true;
       },
       child: GestureDetector(
-        // 탭하면 상/하단바 UI
         onTap: _toggleUIVisibility,
         child: Scaffold(
           backgroundColor: Colors.white,
           body: Column(
             children: [
-              // 상단바 - 로고 + title
-              // 페이드 인/아웃으로 UI 자동 숨김/표시
               AnimatedOpacity(
                 opacity: _showUI ? 1.0 : 0.0,
                 duration: Duration(milliseconds: 300),
                 child: _buildTopBar(),
               ),
 
-              // 본문: 문장 리스트(스크롤)
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (_) {
@@ -269,7 +345,7 @@ class _ReaderPageState extends State<ReaderPage> {
                     return false;
                   },
                   child: ListView.builder(
-                    controller: _scrollController,    // 진행률 계산 컨트롤러
+                    controller: _scrollController,
                     itemCount: _results.length,
                     itemBuilder: (_, index) {
                       return Padding(
@@ -284,7 +360,6 @@ class _ReaderPageState extends State<ReaderPage> {
                 ),
               ),
 
-              // 하단바 - 진행률, 재생/일시정지
               AnimatedOpacity(
                 opacity: _showUI ? 1.0 : 0.0,
                 duration: Duration(milliseconds: 300),
@@ -297,52 +372,44 @@ class _ReaderPageState extends State<ReaderPage> {
     );
   }
 
-  // 상단바
-  // 1. 로고
-  // 2. 제목
   Widget _buildTopBar() {
     return Column(
-        children: [
-          // 상단 로고
-          Container(
-            height: 70,
-            color: Color(0xDDB3C39C),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Image.asset('assets/icons/icon_arrowback.png', height: 28,),
-                  onPressed: () async {
-                    await _saveNow();
-                    if(mounted){
-                      Navigator.pop(context, _progress);
-                    }
-                    },
-                ),
-
-                const Spacer(flex: 1),
-                Image.asset('assets/logos/logo_horizontal.png', height: 40, ),
-                const Spacer(flex: 2),
-              ],
-            ),
-    ),
-    // 제목
-    Container(
-      color: Color(0xFFDEE5D4),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // 책 제목
-        Text( widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
-          ],
+        Container(
+          height: 70,
+          color: Color(0xDDB3C39C),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Image.asset('assets/icons/icon_arrowback.png', height: 28,),
+                onPressed: () async {
+                  await _saveNow();
+                  if(mounted){
+                    Navigator.pop(context, _progress);
+                  }
+                },
+              ),
+
+              const Spacer(),
+              Image.asset('assets/logos/logo_horizontal.png', height: 40, ),
+              const Spacer(flex: 2),
+            ],
+          ),
         ),
-      ),
-        ],
+        Container(
+          color: Color(0xFFDEE5D4),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text( widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-
-  // 하단바
   Widget _buildBottomBar() {
     return Container(
       color: Colors.white54,
@@ -350,11 +417,9 @@ class _ReaderPageState extends State<ReaderPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 진행률 바
           LinearProgressIndicator(value: _progress),
           SizedBox(height: 4),
 
-          // 진행률 텍스트(%)
           Align(
             alignment: Alignment.centerRight,
             child: Text(
@@ -364,18 +429,15 @@ class _ReaderPageState extends State<ReaderPage> {
           ),
           SizedBox(height: 10),
 
-          // 플레이어 컨트롤
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
 
-              // 이전 문장
               IconButton(
                 onPressed: () {},
                 icon: Image.asset('assets/icons/icon_previous.png', height: 40),
               ),
 
-              // 재생/일시정지
               IconButton(
                 onPressed: _togglePlayPause,
                 icon: Image.asset(
@@ -384,7 +446,6 @@ class _ReaderPageState extends State<ReaderPage> {
                 ),
               ),
 
-              // 다음 문장
               IconButton(
                 onPressed: () {},
                 icon: Image.asset('assets/icons/icon_next.png', height: 40),
