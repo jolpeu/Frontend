@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Reader Page
 // 스크롤형 이북 리더 화면
@@ -32,6 +32,7 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> {
+  String? _token;
   late List<String> _sentences;
   bool _showUI = true;
   Timer? _hideTimer;
@@ -71,10 +72,15 @@ class _ReaderPageState extends State<ReaderPage> {
   // GET /reading-progress?userId=xxx&bookId=xxx
   // 성공 시 200 JSON 객체 기대
   Future<Map<String, dynamic>?> _fetchProgress() async {
+    if (_token == null) return null;
     try {
-      final res = await http.get(_getProgressUri, headers: {
-        'Accept':'application/json',
-      });
+      final res = await http.get(
+        _getProgressUri,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+      );
 
       // 200이고 바디가 비어있지 않으면 JSON 파싱
       if(res.statusCode == 200 && res.body.isNotEmpty){
@@ -91,10 +97,16 @@ class _ReaderPageState extends State<ReaderPage> {
     required double offset,
     required double ratio,
 }) async {
+    if (_token == null) return;
+
     try {
       final res = await http.put(
         _putProgressUri,
-        headers: {'Content-Type':'application/json'},
+        // ✨ 핵심: 헤더에 인증 토큰 추가
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
         body: jsonEncode({
           'userId': widget.userId,
           'bookId': widget.bookId,
@@ -134,6 +146,11 @@ class _ReaderPageState extends State<ReaderPage> {
     _startHideTimer();
     _scrollController.addListener(_handleScroll);   // 스크롤 시 진행률 계산하는 리스너
     _restoreFromServer();
+    SharedPreferences.getInstance().then((prefs) {
+      _token = prefs.getString('token');
+      // 토큰을 가져온 후에 서버에서 진행률 복원
+      _restoreFromServer();
+    });
   }
 
 

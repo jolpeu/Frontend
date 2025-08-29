@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:grad_front/models/pdf_analysis.dart';
 import 'package:grad_front/pages/reader_page.dart';
 
 /// 사용자가 업로드한 책들
 class LibraryPage extends StatefulWidget {
-  final List<Map<String, dynamic>> books;
+  final List<PdfAnalysis> books;
 
   final String userId;
   final String apiBaseUrl;
@@ -24,36 +25,39 @@ class _LibraryPageState extends State<LibraryPage> {
   String _viewMode = 'grid';        // 보기 형식: grid or list
 
   /// 필터에 맞는 책 목록 반환
-  List<Map<String, dynamic>> get _filteredBooks {
-    if (_filter == '전체') return widget.books;
-    return widget.books.where((book) => book['status'] == _filter).toList();
+  List<PdfAnalysis> get _filteredBooks {
+    // HomePage에서 status를 아직 보내주지 않으므로, 필터링은 임시로 '전체'만 동작
+    // 추후 PdfAnalysis 모델에 status 필드를 추가하고 HomePage에서 값을 채워주면 필터링이 완성됩니다.
+    // if (_filter == '전체') return widget.books;
+    // return widget.books.where((book) => book.status == _filter).toList();
+    return widget.books; // 임시로 전체 목록 반환
   }
 
-  void _openReader(Map<String, dynamic> book){
-    final String? bookId = (book['id'] ?? book['bookId'])?.toString();
-    if (bookId == null || bookId.isEmpty){
+  void _openReader(PdfAnalysis book) {
+    final String bookId = book.id;
+    if (bookId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('bookId가 없어서 열 수 없습니다.')),
+        SnackBar(content: Text('bookId가 없어서 열 수 없습니다.')),
       );
       return;
     }
 
-    Navigator.push(
+   Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) => ReaderPage(
-              title: (book['title'] ?? '제목 없음').toString(),
-              sentences: List<String>.from(book['sentences'] ?? const []),
-              bookId: bookId,
-              userId: widget.userId,
-              apiBaseUrl: widget.apiBaseUrl
-          )
-      )
+        builder: (_) => ReaderPage(
+          title: book.filename.replaceAll('.pdf', ''),
+          sentences: book.results.map((result) => result.sentence).toList(),
+          bookId: bookId,
+          userId: widget.userId,
+          apiBaseUrl: widget.apiBaseUrl,
+        ),
+      ),
     );
   }
 
   /// 책 카드 UI 생성
-  Widget _buildBookCard(Map<String, dynamic> book) {
+  Widget _buildBookCard(PdfAnalysis book) {
     return GestureDetector(
       onTap: () => _openReader(book),
       child: Container(
@@ -85,21 +89,21 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
             SizedBox(height: 8),
             Text(
-              book['title'],
+              book.filename.replaceAll('.pdf', ''),
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 4),
             LinearProgressIndicator(
-              value: (book['progress'] as double?) ?? 0.0,
+              value: book.progress,
               backgroundColor: Colors.grey.shade200,
               color: Colors.blueAccent,
               minHeight: 6,
             ),
             SizedBox(height: 4),
             Text(
-              '${(((book['progress'] as double?) ?? 0.0) * 100).toInt()}%',
+              '${(book.progress * 100).toInt()}%',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.green.shade700,
@@ -216,7 +220,7 @@ class _LibraryPageState extends State<LibraryPage> {
                           return GestureDetector(
                             onTap: () => _openReader(book),
                             child: ListTile(
-                              title: Text(book['title']),
+                              title: Text(book.filename.replaceAll('.pdf', '')),
                               //subtitle: Text(book['preview'] ?? ''),
                             ),
                           );

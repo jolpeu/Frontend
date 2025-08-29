@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:grad_front/models/pdf_analysis.dart';
 import 'package:grad_front/pages/library_page.dart';
 import 'package:grad_front/pages/my_page.dart';
 import 'package:grad_front/config.dart';
@@ -18,7 +19,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 1;
-  List<Map<String, dynamic>> _books = [];
+  List<PdfAnalysis> _books = [];
 
   String? _userId;
 
@@ -37,36 +38,58 @@ class _HomePageState extends State<HomePage> {
   Future<void> _fetchMyBooks() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final uri = Uri.parse('${Config.apiBaseUrl}/api/files/list');
-    final resp = await http.get(
-      uri,
-      headers: token != null ? {'Authorization': 'Bearer $token'} : {},
+    if (token == null) return;
+    
+    // 1. 책 목록(PdfAnalysis) 먼저 가져오기
+    final listUri = Uri.parse('${Config.apiBaseUrl}/api/files/list');
+    final listResp = await http.get(
+      listUri,
+      headers: {'Authorization': 'Bearer $token'},
     );
 
-    if (resp.statusCode >= 200 && resp.statusCode < 300) {
-      final utf8Body = utf8.decode(resp.bodyBytes);
-      final List<dynamic> data = jsonDecode(utf8Body);
-      final books = data.map((m) {
-        final sentences = List<String>.from(m['sentences'] ?? []);
-        return {
-          'id': (m['id'] ?? m['bookId'])?.toString(),
-          'title': m['filename'].toString().replaceAll('.pdf', ''),
-          'status': '읽고 있는 책',
-          'progress': 0.0,
-          'preview': sentences.isNotEmpty ? sentences.first : '',
-          'sentences': sentences,
-        };
-      }).toList();
-
-      setState(() {
-        _books = books;
-      });
-    } else {
-      print('내 서재 불러오기 실패: ${resp.statusCode} ${resp.body}');
+    if (listResp.statusCode < 200 || listResp.statusCode >= 300) {
+      print('내 서재 불러오기 실패: ${listResp.statusCode}');
+      return;
     }
+
+    final List<dynamic> data = jsonDecode(utf8.decode(listResp.bodyBytes));
+    final List<PdfAnalysis> books = data
+        .map((json) => PdfAnalysis.fromJson(json))
+        .toList();
+
+    // 2. 각 책의 진행률(ReadingProgress)을 병렬로 가져오기
+    final List<Future> progressFutures = [];
+    for (var book in books) {
+      final progressUri = Uri.parse('${Config.apiBaseUrl}/reading-progress')
+          .replace(queryParameters: {
+        'userId': book.userId,
+        'bookId': book.id,
+      });
+
+      progressFutures.add(
+        http.get(progressUri, headers: {'Authorization': 'Bearer $token'})
+            .then((progressResp) {
+          if (progressResp.statusCode == 200 && progressResp.body.isNotEmpty) {
+            final progressData = jsonDecode(progressResp.body);
+            // 가져온 진행률(ratio)을 book 객체에 업데이트!
+            book.progress = (progressData['ratio'] as num?)?.toDouble() ?? 0.0;
+          }
+        }).catchError((_) {
+          // 진행률 조회 실패 시 progress는 기본값 0.0 유지
+        }),
+      );
+    }
+    
+    // 모든 진행률 조회가 끝날 때까지 기다림
+    await Future.wait(progressFutures);
+
+    // 3. 진행률까지 합쳐진 완전체 책 목록으로 UI 업데이트
+    setState(() {
+      _books = books;
+    });
   }
 
-  void _handleNewBook(Map<String, dynamic> book) {
+  void _handleNewBook(PdfAnalysis book) {
     setState(() {
       _books.add(book);
       _currentIndex = 0;
@@ -205,7 +228,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
 }
 
 class HomeMainContent extends StatefulWidget {
-  final Function(Map<String, dynamic>) onUpload;
+  final Function(PdfAnalysis) onUpload;
   const HomeMainContent({required this.onUpload});
 
   @override
@@ -327,16 +350,9 @@ class _HomeMainContentState extends State<HomeMainContent> {
     Navigator.of(context, rootNavigator: true).pop();
 
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
-      // analyze-pdf는 {id, filename} 객체 리턴
       final utf8Body = utf8.decode(resp.bodyBytes);
       final Map<String, dynamic> data = jsonDecode(utf8Body);
-      final book = {
-        'title': data['filename'].toString().replaceAll('.pdf', ''),
-        'status': '읽고 있는 책',
-        'progress': 0.0,
-        'preview': '',
-        'sentences': <String>[],
-      };
+      final book = PdfAnalysis.fromJson(data);
       widget.onUpload(book);
     } else {
       showDialog(
