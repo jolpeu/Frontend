@@ -120,7 +120,7 @@ class _LibraryPageState extends State<LibraryPage> {
             LinearProgressIndicator(
               value: book.progress,
               backgroundColor: Colors.grey.shade200,
-              color: Colors.blueAccent,
+              color: Colors.lightGreen,
               minHeight: 6,
             ),
             SizedBox(height: 4),
