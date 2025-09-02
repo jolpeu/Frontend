@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:grad_front/models/analysis_result.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:grad_front/config.dart';
 
 class ReaderPage extends StatefulWidget{
   final String title;
@@ -42,6 +41,9 @@ class _ReaderPageState extends State<ReaderPage>{
 
   late final List<GlobalKey> _itemKeys;
 
+  late StreamSubscription<int?> _currentIndexSubscription;
+  late StreamSubscription<PlayerState> _playerStateSubscription;
+
   // -------------- 서버 통신 함수 --------------
   // Get /reading-progress 엔드포인트 URI
   Uri get _getProgressUri => Uri.parse(
@@ -72,6 +74,7 @@ class _ReaderPageState extends State<ReaderPage>{
       if(res.statusCode == 200 && res.body.isNotEmpty){
         final body = utf8.decode(res.bodyBytes);
         final map = jsonDecode(body);
+        debugPrint('Data received from server: $map');
         if(map is Map<String, dynamic>) return map;
       }
     } catch (_){}
@@ -84,6 +87,9 @@ class _ReaderPageState extends State<ReaderPage>{
     required double ratio,    // 진행률
   }) async {
     if(_token == null) return;
+
+    debugPrint('Saving progress offset: $offset, ratio: $ratio');
+
     try{
       final res = await http.put(
         _putProgressUri,
@@ -96,6 +102,7 @@ class _ReaderPageState extends State<ReaderPage>{
           'bookId': widget.bookId,
           'offset': offset,
           'ratio': ratio,
+          'currentIndex': _currentIndex,
           'updatedAt': DateTime.now().toIso8601String(),
         }),
       );
@@ -113,6 +120,7 @@ class _ReaderPageState extends State<ReaderPage>{
     if(!mounted || data == null) return;
     final hasOffset = data['offset'] is num;
     final hasRatio = data['ratio'] is num;
+    final hasIndex = data['currentIndex'] is num;
 
     // 진행률이 있으면 업데이트
     if(hasRatio){
@@ -132,6 +140,15 @@ class _ReaderPageState extends State<ReaderPage>{
         _scrollController.jumpTo(_savedOffset.clamp(0.0, max));
       });
     }
+
+    // 마지막으로 읽은 문장 인덱스가 있으면 복원
+    if(hasIndex){
+      final int restoredIndex = (data['currentIndex'] as num).toInt();
+      await _ttsPlayer.seek(Duration.zero, index: restoredIndex);
+      setState(() {
+        _currentIndex = restoredIndex;
+      });
+    }
   }
 
   // -------------- 오디오 플레이어 로직 --------------
@@ -143,7 +160,7 @@ class _ReaderPageState extends State<ReaderPage>{
   String baseUrl = "http://127.0.0.1:8000";
 
   bool _sfxEnabled = true;
-  double _sfxVolume = 0.3;
+  double _sfxVolume = 0.2;
   int _lastEffectIndex = -1;      // 마지막으로 재생된 효과음의 인덱스
 
   // 미디어 파일 URL을 생성하는 함수
@@ -184,7 +201,17 @@ class _ReaderPageState extends State<ReaderPage>{
       _ttsPlayer.playerStateStream.listen((s) {
         setState(() => _isPlaying = s.playing);
       });
-      
+
+      _currentIndexSubscription = _ttsPlayer.currentIndexStream.listen((i){
+        if(i == null) return;
+        setState(() => _currentIndex = i);
+        _scrollToCurrentSentence();
+      });
+
+      _playerStateSubscription = _ttsPlayer.playerStateStream.listen((s){
+        setState(() => _isPlaying = s.playing);
+      });
+
       await _sfxPlayer.setVolume(_sfxVolume);
       setState(() => _audioReady = true);
     } catch(e){
@@ -247,12 +274,8 @@ class _ReaderPageState extends State<ReaderPage>{
     _debounceTimer?.cancel();
     final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
 
-    // 위젯이 사라지기 전에 진행률 서버에 저장
-    Future(() async {
-      try{
-        await _upsertProgress(offset: offset, ratio: _progress);
-      } catch(_) {}
-    });
+    _currentIndexSubscription.cancel();
+    _playerStateSubscription.cancel();
 
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
@@ -307,15 +330,30 @@ class _ReaderPageState extends State<ReaderPage>{
     _playEffect(_currentIndex);
   }
 
-  // 재생/일시정지
+  // tts 재생/일시정지
   void _togglePlayPause() {
     if(!_audioReady) return;
     if(_ttsPlayer.playing) {
       _ttsPlayer.pause();
+      _sfxPlayer.pause();
     } else {
       _playEffect(_currentIndex);
       _ttsPlayer.play();
+      _sfxPlayer.play();
     }
+  }
+
+  // 효과음 재생/일시정지
+  void _toggleSfx() async {
+   setState(() {
+     _sfxEnabled = !_sfxEnabled;
+   });
+
+   if(_sfxEnabled){
+     await _sfxPlayer.setVolume(_sfxVolume);
+   } else {
+     await _sfxPlayer.setVolume(0.0);
+   }
   }
 
   // 상/하단 UI를 숨기는 타이머 시작 함수
@@ -341,7 +379,7 @@ class _ReaderPageState extends State<ReaderPage>{
 
     await Scrollable.ensureVisible(
         context,
-        alignment: 0.25,
+        alignment: 0.4,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOut,
       );
@@ -355,7 +393,8 @@ class _ReaderPageState extends State<ReaderPage>{
         if(didPop) return;
         await _saveNow();
         if(mounted){
-          Navigator.of(context).pop(_progress);
+          final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+          Navigator.of(context).pop({'progress': _progress, 'offset':offset});
         }
       },
 
@@ -372,18 +411,26 @@ class _ReaderPageState extends State<ReaderPage>{
                   itemCount: _results.length,
                   itemBuilder: (_, index) {
                     final isCurrent = index == _currentIndex;
-                    return Padding(
+                    return GestureDetector(
+                      onTap: () {
+                        _playFrom(index);
+                      },
+                      child: Padding(
                         key: _itemKeys[index],
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
                         child: Text(
                           _results[index].sentence,
                           style: TextStyle(
                             fontSize: 18,
                             height: 1.5,
-                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                            backgroundColor: isCurrent ? Colors.lime : Colors.transparent,
+                            fontWeight: isCurrent ? FontWeight.bold : FontWeight
+                                .normal,
+                            backgroundColor: isCurrent ? Colors.lime : Colors
+                                .transparent,
                           ),
                         ),
+                      ),
                     );
                   }
               ),
@@ -427,14 +474,15 @@ class _ReaderPageState extends State<ReaderPage>{
                   onPressed: () async {
                     await _saveNow();
                     if(mounted){
-                      Navigator.pop(context, _progress);
+                      final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                      Navigator.pop(context, {'progress':_progress, 'offset': offset});
                     }
                   }, 
                   icon: Image.asset('assets/icons/icon_arrowback.png', height: 28,)
               ),
-              const Spacer(),
+              const Spacer(flex: 2),
               Image.asset('assets/logos/logo_horizontal.png', height: 40,),
-              const Spacer(flex: 2,),
+              const Spacer(flex: 2),
             ],
           ),
         ),
@@ -458,8 +506,15 @@ class _ReaderPageState extends State<ReaderPage>{
       color: Colors.white54,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Column(
-        mainAxisSize:  MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+                  onPressed: _toggleSfx,
+                  icon: _sfxEnabled ? Image.asset('assets/icons/icon_volume-high.png', height: 36) : Image.asset('assets/icons/icon_volume-slash.png', height: 36,),
+                ),
+          ),
           LinearProgressIndicator(
             value: _progress,
             color: Colors.lightGreen,

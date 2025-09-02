@@ -9,6 +9,7 @@ class PdfAnalysis {
   
   // 진행률
   double progress;
+  double? lastReadOffset;
 
   PdfAnalysis({
     required this.id,
@@ -17,6 +18,7 @@ class PdfAnalysis {
     required this.uploadedTime,
     required this.results,
     this.progress = 0.0, // 기본값은 0.0
+    this.lastReadOffset,
   });
 
   factory PdfAnalysis.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,8 @@ class PdfAnalysis {
       filename: json['filename'] ?? '제목 없음',
       uploadedTime: DateTime.tryParse(json['uploadedTime'] ?? '') ?? DateTime.now(),
       results: parsedResults,
+      progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+      lastReadOffset: (json['lastReadOffset'] as num?)?.toDouble(),
       // progress는 이 모델에 없으므로 여기서 파싱하지 않음
     );
   }

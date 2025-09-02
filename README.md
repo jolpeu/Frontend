@@ -23,4 +23,4 @@ flutter pub get
 flutter run
 
 웹(Web)
-flutter run -d chrome
+flutter run -d chrome --web-port=3000

@@ -26,11 +26,6 @@ class _LibraryPageState extends State<LibraryPage> {
 
   /// 필터에 맞는 책 목록 반환
   List<PdfAnalysis> get _filteredBooks {
-    // HomePage에서 status를 아직 보내주지 않으므로, 필터링은 임시로 '전체'만 동작
-    // 추후 PdfAnalysis 모델에 status 필드를 추가하고 HomePage에서 값을 채워주면 필터링이 완성됩니다.
-    // if (_filter == '전체') return widget.books;
-    // return widget.books.where((book) => book.status == _filter).toList();
-    //return widget.books; // 임시로 전체 목록 반환
     bool completed(PdfAnalysis b) => (b.progress >= 0.999);
 
     switch (_filter) {
@@ -54,7 +49,8 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
 
-    final result = await Navigator.push<double>(
+    // ReaderPage가 반환하는 값의 타입을 Map<String, dynamic>으로 명시함
+    final result = await Navigator.push<Map<String, double>>(
       context, MaterialPageRoute(
         builder: (_) => ReaderPage(
           title: book.filename.replaceAll('.pdf', ''),
@@ -68,14 +64,19 @@ class _LibraryPageState extends State<LibraryPage> {
 
     // 진행률이 넘어오면 책 카드의 진행률 갱신
     if (result != null) {
-      // 0.0 ~ 1.0 범위로 안전하게 보정
-      final double clamped = result < 0.0 ? 0.0 : (result > 1.0 ? 1.0 : result);
+      final double? progress = (result['progress'] as num?)?.toDouble();
+      final double? offset = (result['offset'] as num?)?.toDouble();
+
       setState(() {
-        book.progress = clamped; // PdfAnalysis 모델의 progress 필드 업데이트
+        if (progress != null) {
+          book.progress = progress.clamp(0.0, 1.0);
+        }
+
+        if (offset != null) {
+          book.lastReadOffset = offset;
+        }
       });
     }
-
-
   }
 
   /// 책 카드 UI 생성
