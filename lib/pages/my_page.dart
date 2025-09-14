@@ -128,21 +128,21 @@ class _MyPageState extends State<MyPage> {
 
     // 파일목록 표준화
     final books = listJson.map<Map<String, dynamic>>((m) {
-    final map = Map<String, dynamic>.from(m as Map);
+      final map = Map<String, dynamic>.from(m as Map);
 
-    final resultsData = List<Map<String, dynamic>>.from(map['results'] ?? const []);
+      final resultsData = List<Map<String, dynamic>>.from(map['results'] ?? const []);
 
-    final sentences = resultsData.map((r) => (r['sentence'] ?? '').toString()).toList();
+      final sentences = resultsData.map((r) => (r['sentence'] ?? '').toString()).toList();
 
-    return {
-      'id': (map['id'] ?? map['bookId'])?.toString(),
-      'title': (map['filename'] ?? map['title'] ?? '').toString().replaceAll('.pdf', ''),
-      'filename': (map['filename'] ?? '').toString(),
-      'sentences': sentences,
-      'results': resultsData,
-      'raw': map,
-    };
-  }).toList();
+      return {
+        'id': (map['id'] ?? map['bookId'])?.toString(),
+        'title': (map['filename'] ?? map['title'] ?? '').toString().replaceAll('.pdf', ''),
+        'filename': (map['filename'] ?? '').toString(),
+        'sentences': sentences,
+        'results': resultsData,
+        'raw': map,
+      };
+    }).toList();
 
     bookCount = books.length;
 
@@ -199,17 +199,17 @@ class _MyPageState extends State<MyPage> {
     });
 
     recent = progressList
-      .where((p) => p['updatedAt'] != null)
-      .take(3)
-      .map<Map<String, dynamic>>((p) {
-        final b = Map<String, dynamic>.from(p['book'] as Map);
-        return {
-          'id': b['id'],
-          'title': b['title'],
-          'sentences': b['sentences'], // 위에서 만든 sentences 리스트
-          'results': b['results'],     // 위에서 만든, emotion 정보 등이 포함된 results 리스트
-        };
-      }).toList();
+        .where((p) => p['updatedAt'] != null)
+        .take(3)
+        .map<Map<String, dynamic>>((p) {
+      final b = Map<String, dynamic>.from(p['book'] as Map);
+      return {
+        'id': b['id'],
+        'title': b['title'],
+        'sentences': b['sentences'], // 위에서 만든 sentences 리스트
+        'results': b['results'],     // 위에서 만든, emotion 정보 등이 포함된 results 리스트
+      };
+    }).toList();
 
 
     if (!mounted) return;
