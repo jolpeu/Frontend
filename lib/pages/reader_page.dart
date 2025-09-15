@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:grad_front/models/analysis_result.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:grad_front/refresh_notifier.dart';
+
 
 class ReaderPage extends StatefulWidget{
   final String title;
@@ -393,6 +395,9 @@ class _ReaderPageState extends State<ReaderPage>{
         if(didPop) return;
         await _saveNow();
         if(mounted){
+          if (_progress >= 0.99) {
+            myPageRefreshNotifier.value++;
+          }
           final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
           Navigator.of(context).pop({'progress': _progress, 'offset':offset});
         }
@@ -474,6 +479,9 @@ class _ReaderPageState extends State<ReaderPage>{
                   onPressed: () async {
                     await _saveNow();
                     if(mounted){
+                      if (_progress >= 0.99) {
+                        myPageRefreshNotifier.value++;
+                      }
                       final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
                       Navigator.pop(context, {'progress':_progress, 'offset': offset});
                     }

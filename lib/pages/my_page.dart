@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:grad_front/refresh_notifier.dart';
 
 import 'package:grad_front/pages/reader_page.dart';
 import 'package:grad_front/config.dart';
@@ -44,6 +45,8 @@ class _MyPageState extends State<MyPage> {
   void initState() {
     super.initState();
     _init();
+
+    myPageRefreshNotifier.addListener(_onRefresh);
   }
 
   Future<void> _init() async {
@@ -223,8 +226,16 @@ class _MyPageState extends State<MyPage> {
 
   @override
   void dispose() {
+    myPageRefreshNotifier.removeListener(_onRefresh); // 리스너 제거
     _nickCtrl.dispose();
     super.dispose();
+  }
+
+  void _onRefresh() {
+    // 위젯이 화면에 아직 붙어있을 때만 데이터를 로드
+    if (mounted) {
+      _loadStats();
+    }
   }
 
   // 최근 책의 데이터(Map)에 따라 List<AnalysisResult>로 변환
