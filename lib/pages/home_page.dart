@@ -382,7 +382,18 @@ class _HomeMainContentState extends State<HomeMainContent> {
       barrierDismissible: false,
       useRootNavigator: true,
       barrierColor: Colors.black54,
-      builder: (_) => Center(child: LoadingAnimation()),
+      builder: (_) => Center(
+          child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LoadingAnimation(),
+                  SizedBox(height: 24,),
+                  Text(
+                    '파일을 업로드하는 중입니다.',
+                    style: TextStyle(color: Color(0xDDB2C29B), fontSize: 24, decoration: TextDecoration.none),
+                  )
+                ],
+          )),
     );
 
     final bytes = _pickedBytes!;

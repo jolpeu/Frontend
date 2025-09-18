@@ -207,6 +207,7 @@ class _ReaderPageState extends State<ReaderPage>{
       _currentIndexSubscription = _ttsPlayer.currentIndexStream.listen((i){
         if(i == null) return;
         setState(() => _currentIndex = i);
+        _playEffect(i);
         _scrollToCurrentSentence();
       });
 
